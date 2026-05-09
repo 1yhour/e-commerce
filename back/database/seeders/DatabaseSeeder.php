@@ -28,12 +28,12 @@ class DatabaseSeeder extends Seeder
         // 2. Create an Admin User
         User::factory()->create([
             'role_id'           => $adminRole->id,
-            'first_name'        => 'Super',
-            'last_name'         => 'Admin',
-            'email'             => 'admin@example.com',
-            'password_hash'     => Hash::make('password'),
-            'telegram_chat_id'  => 123456789,
-            'telegram_username' => 'admin_user',
+            'first_name'        => env('ADMIN_FIRST_NAME', 'Super'),
+            'last_name'         => env('ADMIN_LAST_NAME', 'Admin'),
+            'email'             => env('ADMIN_EMAIL', 'admin@example.com'),
+            'password_hash'     => Hash::make(env('ADMIN_PASSWORD', 'password')),
+            'telegram_chat_id'  => env('ADMIN_TELEGRAM_CHAT_ID'),
+            'telegram_username' => env('ADMIN_TELEGRAM_USERNAME'),
         ]);
 
         // 3. Create a Test Customer

@@ -17,6 +17,19 @@ use Tymon\JWTAuth\Contracts\JWTSubject;
 class User extends Model implements AuthenticatableContract, JWTSubject
 {
     use HasFactory, HasUuids, SoftDeletes, Authenticatable;
+    
+    /**
+     * The "booted" method of the model.
+     * Sets the default role to 'Customer' during creation if not specified.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (User $user) {
+            if (empty($user->role_id)) {
+                $user->role_id = Role::where('name', 'Customer')->first()?->id;
+            }
+        });
+    }
 
     protected $fillable = [
         'role_id',
