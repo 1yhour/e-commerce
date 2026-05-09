@@ -25,25 +25,29 @@ class DatabaseSeeder extends Seeder
         $adminRole = Role::firstOrCreate(['name' => 'Admin']);
         $customerRole = Role::firstOrCreate(['name' => 'Customer']);
 
-        // 2. Create an Admin User
-        User::factory()->create([
-            'role_id'           => $adminRole->id,
-            'first_name'        => env('ADMIN_FIRST_NAME', 'Super'),
-            'last_name'         => env('ADMIN_LAST_NAME', 'Admin'),
-            'email'             => env('ADMIN_EMAIL', 'admin@example.com'),
-            'password_hash'     => Hash::make(env('ADMIN_PASSWORD', 'password')),
-            'telegram_chat_id'  => env('ADMIN_TELEGRAM_CHAT_ID'),
-            'telegram_username' => env('ADMIN_TELEGRAM_USERNAME'),
-        ]);
+        // 2. Create a Static Admin User
+        User::updateOrCreate(
+            ['email' => env('ADMIN_EMAIL', 'admin@luxe.com')],
+            [
+                'role_id'           => $adminRole->id,
+                'first_name'        => env('ADMIN_FIRST_NAME', 'Super'),
+                'last_name'         => env('ADMIN_LAST_NAME', 'Admin'),
+                'password_hash'     => Hash::make(env('ADMIN_PASSWORD', 'admin123')),
+                'telegram_chat_id'  => env('ADMIN_TELEGRAM_CHAT_ID'),
+                'telegram_username' => env('ADMIN_TELEGRAM_USERNAME'),
+            ]
+        );
 
-        // 3. Create a Test Customer
-        User::factory()->create([
-            'role_id'       => $customerRole->id,
-            'first_name'    => 'Test',
-            'last_name'     => 'Customer',
-            'email'         => 'customer@example.com',
-            'password_hash' => Hash::make('password'),
-        ]);
+        // 3. Create a Static Test Customer
+        User::updateOrCreate(
+            ['email' => 'customer@example.com'],
+            [
+                'role_id'       => $customerRole->id,
+                'first_name'    => 'Test',
+                'last_name'     => 'Customer',
+                'password_hash' => Hash::make('password123'),
+            ]
+        );
 
         // 4. Create some random customers
         User::factory(10)->create([
