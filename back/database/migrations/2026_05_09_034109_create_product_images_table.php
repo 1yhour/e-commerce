@@ -9,14 +9,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('product_images', function (Blueprint $table) {
-            $table->uuid('id')->primary();
+            $table->uuid('id')->primary()->default(DB::raw('gen_random_uuid()'));
             $table->foreignUuid('product_id')->constrained('products')->cascadeOnDelete();
-            $table->foreignUuid('product_variant_id')->nullable()->constrained('product_variants')->nullOnDelete();
-            $table->string('url', 255);
-            $table->string('alt_text', 255)->nullable();
-            $table->integer('sort_order')->default(0);
-            $table->timestamps();
-            // Note: No soft deletes requested for images based on schema.
+            $table->string('image_url', 512);
+            $table->boolean('is_primary')->default(false);
+            $table->unsignedSmallInteger('sort_order')->default(0);
         });
     }
 

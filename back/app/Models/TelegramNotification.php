@@ -2,45 +2,79 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TelegramNotification extends Model
 {
-    use HasFactory, HasUuids;
+    use HasUuids;
+
+    public $timestamps = false;
+
+    protected $table = 'telegram_notifications';
 
     protected $fillable = [
-        'event_type', 'reference_id', 'chat_id', 'message_text', 
-        'status', 'retry_count', 'next_retry_at',
+        'user_id',
+        'chat_id',
+        'event_type',
+        'reference_type',
+        'reference_id',
+        'message',
+        'telegram_message_id',
+        'delivery_status',
+        'error_message',
     ];
 
-    protected function casts(): array
+    protected $casts = [
+        'chat_id'            => 'integer',
+        'telegram_message_id'=> 'integer',
+        'sent_at'            => 'datetime',
+    ];
+
+    // Event type constants
+    const EVENT_NEW_ORDER       = 'new_order';
+    const EVENT_PAYMENT_SUCCESS = 'payment_success';
+    const EVENT_PAYMENT_FAILED  = 'payment_failed';
+    const EVENT_ORDER_SHIPPED   = 'order_shipped';
+    const EVENT_LOW_STOCK       = 'low_stock';
+
+    // Delivery status
+    const DELIVERY_SENT   = 'sent';
+    const DELIVERY_FAILED = 'failed';
+
+    /*
+    |--------------------------------------------------------------------------
+    | Relationships
+    |--------------------------------------------------------------------------
+    | USERS ||--o{ TELEGRAM_NOTIFICATIONS : "receives"
+    */
+
+    /** The admin user this notification was sent to. */
+    public function user(): BelongsTo
     {
-        return [
-            'retry_count' => 'integer',
-            'next_retry_at' => 'datetime',
-        ];
+        return $this->belongsTo(User::class);
     }
 
-    public function logs(): HasMany
+    /*
+    |--------------------------------------------------------------------------
+    | Helpers
+    |--------------------------------------------------------------------------
+    */
+
+    /** Resolve the referenced entity (Order, Payment, or Product). */
+    public function resolveReference(): Model|null
     {
-        return $this->hasMany(WebhookLog::class, 'notification_id');
+        return match ($this->reference_type) {
+            'order'   => Order::find($this->reference_id),
+            'payment' => Payment::find($this->reference_id),
+            'product' => Product::find($this->reference_id),
+            default   => null,
+        };
     }
 
-    public function failedEntry(): HasOne
+    public function wasDelivered(): bool
     {
-        return $this->hasOne(FailedWebhook::class, 'notification_id');
-    }
-
-    /**
-     * Helper to determine if the notification is ready to be processed by a worker.
-     */
-    public function isReadyForRetry(): bool
-    {
-        return $this->status === 'pending' && 
-               ($this->next_retry_at === null || $this->next_retry_at->isPast());
+        return $this->delivery_status === self::DELIVERY_SENT;
     }
 }

@@ -2,38 +2,49 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CartItem extends Model
 {
-    use HasFactory, HasUuids;
+    use HasUuids;
 
-    protected $fillable = [
-        'cart_id', 'product_variant_id', 'quantity', 
-        'unit_price', 'tax_rate', 'custom_attributes',
-    ];
+    public $timestamps = false;
 
-    protected function casts(): array
-    {
-        return [
-            'quantity' => 'integer',
-            'unit_price' => 'decimal:2',
-            'total_price' => 'decimal:2', // Even though it's generated, we still cast it
-            'tax_rate' => 'decimal:2',
-            'custom_attributes' => 'array',
-        ];
-    }
+    protected $fillable = ['cart_id', 'product_id', 'quantity'];
 
+    protected $casts = ['quantity' => 'integer'];
+
+    /*
+    |--------------------------------------------------------------------------
+    | Relationships
+    |--------------------------------------------------------------------------
+    | CARTS    ||--o{ CART_ITEMS : "contains"
+    | PRODUCTS ||--o{ CART_ITEMS : "added_to"
+    */
+
+    /** The cart this item belongs to. */
     public function cart(): BelongsTo
     {
         return $this->belongsTo(Cart::class);
     }
 
-    public function variant(): BelongsTo
+    /** The product added to the cart. */
+    public function product(): BelongsTo
     {
-        return $this->belongsTo(ProductVariant::class, 'product_variant_id');
+        return $this->belongsTo(Product::class);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Helpers
+    |--------------------------------------------------------------------------
+    */
+
+    /** Line total = quantity × current product price. */
+    public function getLineTotalAttribute(): float
+    {
+        return $this->quantity * $this->product->price;
     }
 }

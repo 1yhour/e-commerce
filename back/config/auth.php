@@ -39,7 +39,13 @@ return [
 
     'guards' => [
         'web' => [
-            'driver' => 'session',
+            'driver'   => 'session',
+            'provider' => 'users',
+        ],
+
+        // JWT guard — used by middleware('auth:api') on all API routes
+        'api' => [
+            'driver'   => 'jwt',
             'provider' => 'users',
         ],
     ],

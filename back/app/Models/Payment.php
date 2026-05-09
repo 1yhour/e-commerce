@@ -2,42 +2,84 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Payment extends Model
 {
-    use HasFactory, HasUuids;
+    use HasUuids;
+
+    const UPDATED_AT = null;
 
     protected $fillable = [
-        'order_id', 'amount', 'currency', 'provider', 'status',
+        'order_id', 'payment_method_id', 'transaction_id',
+        'status', 'amount', 'currency', 'paid_at', 'expires_at',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'amount' => 'decimal:2',
-        ];
-    }
+    protected $casts = [
+        'amount'     => 'decimal:2',
+        'paid_at'    => 'datetime',
+        'expires_at' => 'datetime',
+        'created_at' => 'datetime',
+    ];
 
+    // Status constants
+    const STATUS_PENDING = 'pending';
+    const STATUS_SUCCESS = 'success';
+    const STATUS_FAILED  = 'failed';
+    const STATUS_EXPIRED = 'expired';
+
+    /*
+    |--------------------------------------------------------------------------
+    | Relationships
+    |--------------------------------------------------------------------------
+    | ORDERS          ||--|| PAYMENTS         : "processed_via"
+    | PAYMENT_METHODS ||--o{ PAYMENTS         : "used_in"
+    | PAYMENTS        ||--o| KHQR_TRANSACTIONS : "details"
+    */
+
+    /** The order this payment is for. */
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
     }
 
-    public function attempts(): HasMany
+    /** The payment method used (KHQR / Stripe / PayPal / COD). */
+    public function paymentMethod(): BelongsTo
     {
-        return $this->hasMany(PaymentAttempt::class)->latest();
+        return $this->belongsTo(PaymentMethod::class);
     }
-    
+
     /**
-     * Helper to get the currently active or most recent attempt
+     * The KHQR-specific transaction details.
+     * Only exists when paymentMethod.provider === 'KHQR'.
      */
-    public function latestAttempt()
+    public function khqrTransaction(): HasOne
     {
-        return $this->hasOne(PaymentAttempt::class)->latestOfMany();
+        return $this->hasOne(KhqrTransaction::class);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Helpers
+    |--------------------------------------------------------------------------
+    */
+
+    public function isSuccess(): bool
+    {
+        return $this->status === self::STATUS_SUCCESS;
+    }
+
+    public function isPending(): bool
+    {
+        return $this->status === self::STATUS_PENDING;
+    }
+
+    public function isExpired(): bool
+    {
+        return $this->status === self::STATUS_EXPIRED
+            || ($this->expires_at && $this->expires_at->isPast() && $this->isPending());
     }
 }

@@ -9,14 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('roles', function (Blueprint $table) {
-            $table->uuid('id')->primary();
-            $table->string('name', 50);
-            $table->string('slug', 50)->unique();
-            $table->string('description', 255)->nullable();
-            $table->timestamps();
-            $table->softDeletes();
-            
-            $table->index('slug');
+            $table->uuid('id')->primary()->default(DB::raw('gen_random_uuid()'));
+            $table->string('name', 50)->unique(); // 'Admin', 'Customer'
         });
     }
 

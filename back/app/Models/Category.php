@@ -2,40 +2,35 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Category extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, HasUuids;
 
-    protected $fillable = [
-        'parent_id', 'name', 'slug', 'is_active',
-    ];
+    public $timestamps = false;
 
-    protected function casts(): array
+    protected $fillable = ['name', 'slug'];
+
+    /*
+    |--------------------------------------------------------------------------
+    | Relationships
+    |--------------------------------------------------------------------------
+    | CATEGORIES ||--o{ PRODUCTS : "categorizes"
+    */
+
+    /** All products belonging to this category. */
+    public function products(): HasMany
     {
-        return [
-            'is_active' => 'boolean',
-        ];
+        return $this->hasMany(Product::class);
     }
 
-    public function parent(): BelongsTo
+    /** Only active products in this category. */
+    public function activeProducts(): HasMany
     {
-        return $this->belongsTo(Category::class, 'parent_id');
-    }
-
-    public function children(): HasMany
-    {
-        return $this->hasMany(Category::class, 'parent_id');
-    }
-
-    public function products(): BelongsToMany
-    {
-        return $this->belongsToMany(Product::class);
+        return $this->hasMany(Product::class)->where('is_active', true);
     }
 }

@@ -2,77 +2,86 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Support\Str;
 
 class Order extends Model
 {
-    use HasFactory, HasUuids;
+    use HasFactory;
+
+    // String primary key e.g. 'ORD-2026-A1B2C3'
+    protected $keyType    = 'string';
+    public    $incrementing = false;
 
     protected $fillable = [
-        'order_number', 'user_id', 'cart_id', 'subtotal', 
-        'shipping_fee', 'tax_total', 'discount_total', 
-        'grand_total', 'currency', 'status', 'customer_notes',
+        'id', 'user_id', 'address_id', 'status',
+        'subtotal', 'tax_amount', 'shipping_fee', 'total_amount', 'note',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'subtotal' => 'decimal:2',
-            'shipping_fee' => 'decimal:2',
-            'tax_total' => 'decimal:2',
-            'discount_total' => 'decimal:2',
-            'grand_total' => 'decimal:2',
-        ];
-    }
+    protected $casts = [
+        'subtotal'     => 'decimal:2',
+        'tax_amount'   => 'decimal:2',
+        'shipping_fee' => 'decimal:2',
+        'total_amount' => 'decimal:2',
+    ];
 
-    /**
-     * Auto-generate Order Number if not provided
-     */
-    protected static function booted()
-    {
-        static::creating(function ($order) {
-            if (empty($order->order_number)) {
-                // e.g., ORD-20260508-A9F2
-                $date = now()->format('Ymd');
-                $random = strtoupper(Str::random(4));
-                $order->order_number = "ORD-{$date}-{$random}";
-            }
-        });
-    }
+    // Order status constants (mirrors DB enum)
+    const STATUS_PENDING    = 'Pending Payment';
+    const STATUS_PROCESSING = 'Processing';
+    const STATUS_SHIPPED    = 'Shipped';
+    const STATUS_COMPLETED  = 'Completed';
+    const STATUS_CANCELLED  = 'Cancelled';
 
+    /*
+    |--------------------------------------------------------------------------
+    | Relationships
+    |--------------------------------------------------------------------------
+    | USERS     ||--o{ ORDERS      : "places"
+    | ADDRESSES ||--o{ ORDERS      : "shipped_to"
+    | ORDERS    ||--o{ ORDER_ITEMS : "includes"
+    | ORDERS    ||--|| PAYMENTS    : "processed_via"
+    */
+
+    /** The customer who placed this order. */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function cart(): BelongsTo
+    /** The shipping address for this order. */
+    public function address(): BelongsTo
     {
-        return $this->belongsTo(Cart::class);
+        return $this->belongsTo(Address::class);
     }
 
-    public function shippingAddress(): HasOne
-    {
-        return $this->hasOne(ShippingAddress::class);
-    }
-
+    /** All line items in this order. */
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
     }
 
-    public function shipments(): HasMany
+    /** The payment record for this order (one-to-one). */
+    public function payment(): HasOne
     {
-        return $this->hasMany(Shipment::class);
+        return $this->hasOne(Payment::class);
     }
 
-    public function statusHistory(): HasMany
+    /*
+    |--------------------------------------------------------------------------
+    | Helpers
+    |--------------------------------------------------------------------------
+    */
+
+    public function isPaid(): bool
     {
-        return $this->hasMany(OrderStatusHistory::class)->latest('created_at');
+        return optional($this->payment)->status === Payment::STATUS_SUCCESS;
+    }
+
+    public function isPending(): bool
+    {
+        return $this->status === self::STATUS_PENDING;
     }
 }

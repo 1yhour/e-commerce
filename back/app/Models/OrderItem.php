@@ -2,39 +2,53 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class OrderItem extends Model
 {
     use HasFactory, HasUuids;
 
-    // Disables the updated_at timestamp requirement for immutable snapshot
-    public const UPDATED_AT = null;
+    public $timestamps = false;
 
-    protected $fillable = [
-        'order_id', 'product_variant_id', 'product_name', 
-        'sku', 'unit_price', 'quantity',
+    protected $fillable = ['order_id', 'product_id', 'quantity', 'unit_price'];
+
+    protected $casts = [
+        'quantity'   => 'integer',
+        'unit_price' => 'decimal:2',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'unit_price' => 'decimal:2',
-            'total_price' => 'decimal:2', // Even though it's generated, we cast it for consistency
-            'quantity' => 'integer',
-        ];
-    }
+    /*
+    |--------------------------------------------------------------------------
+    | Relationships
+    |--------------------------------------------------------------------------
+    | ORDERS   ||--o{ ORDER_ITEMS : "includes"
+    | PRODUCTS ||--o{ ORDER_ITEMS : "purchased_as"
+    */
 
+    /** The order this line item belongs to. */
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
     }
 
-    public function variant(): BelongsTo
+    /** The product purchased (snapshot price stored separately). */
+    public function product(): BelongsTo
     {
-        return $this->belongsTo(ProductVariant::class, 'product_variant_id');
+        return $this->belongsTo(Product::class);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Helpers
+    |--------------------------------------------------------------------------
+    */
+
+    /** Line total using the snapshotted unit price (not the live product price). */
+    public function getLineTotalAttribute(): float
+    {
+        return $this->quantity * $this->unit_price;
     }
 }

@@ -2,42 +2,28 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Role extends Model
 {
-    use HasFactory, HasUuids, SoftDeletes;
+    use HasUuids;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
-    protected $fillable = [
-        'name',
-        'slug',
-        'description',
-    ];
+    public $timestamps = false;
 
-    /**
-     * Get the users that belong to the role.
-     */
-    public function users(): BelongsToMany
+    protected $fillable = ['name'];
+
+    /*
+    |--------------------------------------------------------------------------
+    | Relationships
+    |--------------------------------------------------------------------------
+    | ROLES ||--o{ USERS : "assigns"
+    */
+
+    /** All users assigned to this role. */
+    public function users(): HasMany
     {
-        return $this->belongsToMany(User::class)
-                    ->withTimestamps();
-    }
-
-    /**
-     * Get the permissions assigned to the role.
-     */
-    public function permissions(): BelongsToMany
-    {
-        return $this->belongsToMany(Permission::class)
-                    ->withTimestamps();
+        return $this->hasMany(User::class);
     }
 }
