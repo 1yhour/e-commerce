@@ -15,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet'
-import { useStore } from '@/lib/store-context'
+import { useAuth } from '@/context/AuthContext'
 import { cn } from '@/lib/utils'
 
 const navigation = [
@@ -26,7 +26,7 @@ const navigation = [
 
 export function Header() {
   const pathname = usePathname()
-  const { state, logout, cartItemCount } = useStore()
+  const { user, isAuthenticated, logout, cartItemCount } = useAuth()
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -108,14 +108,14 @@ export function Header() {
             </Link>
 
             {/* User Menu */}
-            {state.isAuthenticated ? (
+            {isAuthenticated ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="icon" className="rounded-full">
-                    {state.user?.avatar ? (
+                    {user?.avatar ? (
                       <img
-                        src={state.user.avatar}
-                        alt={state.user.name}
+                        src={user.avatar}
+                        alt={`${user.first_name} ${user.last_name}`}
                         className="h-8 w-8 rounded-full object-cover"
                       />
                     ) : (
@@ -126,8 +126,8 @@ export function Header() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
                   <div className="px-2 py-1.5">
-                    <p className="text-sm font-medium">{state.user?.name}</p>
-                    <p className="text-xs text-muted-foreground">{state.user?.email}</p>
+                    <p className="text-sm font-medium">{user?.first_name} {user?.last_name}</p>
+                    <p className="text-xs text-muted-foreground">{user?.email}</p>
                   </div>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
@@ -136,7 +136,7 @@ export function Header() {
                       My Orders
                     </Link>
                   </DropdownMenuItem>
-                  {state.user?.role === 'admin' && (
+                  {user?.role?.name === 'Admin' && (
                     <DropdownMenuItem asChild>
                       <Link href="/admin" className="cursor-pointer">
                         <LayoutDashboard className="mr-2 h-4 w-4" />
@@ -183,13 +183,13 @@ export function Header() {
                     </Link>
                   ))}
                   <div className="border-t border-border pt-4 mt-4">
-                    {state.isAuthenticated ? (
+                    {isAuthenticated ? (
                       <>
                         <Link href="/orders" className="flex items-center gap-2 py-2 text-muted-foreground hover:text-primary">
                           <Package className="h-5 w-5" />
                           My Orders
                         </Link>
-                        {state.user?.role === 'admin' && (
+                        {user?.role?.name === 'Admin' && (
                           <Link href="/admin" className="flex items-center gap-2 py-2 text-muted-foreground hover:text-primary">
                             <LayoutDashboard className="h-5 w-5" />
                             Admin Dashboard

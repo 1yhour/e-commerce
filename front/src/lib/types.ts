@@ -24,11 +24,19 @@ export interface Address {
   country: string;
 }
 
-export interface User {
+export interface Role {
   id: string;
   name: string;
+  description?: string;
+}
+
+export interface User {
+  id: string;
+  name?: string;
+  first_name?: string;
+  last_name?: string;
   email: string;
-  role: 'admin' | 'customer';
+  role?: Role;
   avatar?: string;
   addresses?: Address[];
   createdAt?: string;
