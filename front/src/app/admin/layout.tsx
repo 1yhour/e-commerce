@@ -22,11 +22,9 @@ import { cn } from '@/lib/utils'
 import { useAuth } from '@/context/AuthContext'
 
 const sidebarLinks = [
-  { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
+  { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
   { name: 'Products', href: '/admin/products', icon: Package },
   { name: 'Orders', href: '/admin/orders', icon: ShoppingCart },
-  { name: 'Users', href: '/admin/users', icon: Users },
-  { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
   { name: 'Settings', href: '/admin/settings', icon: Settings },
 ]
 
@@ -48,7 +46,7 @@ function SidebarContent({ pathname, onLogout }: { pathname: string; onLogout: ()
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-1">
         {sidebarLinks.map((link) => {
-          const isActive = pathname === link.href || (link.href !== '/admin' && pathname.startsWith(link.href))
+          const isActive = pathname === link.href || pathname.startsWith(link.href + '/')
           
           return (
             <Link
