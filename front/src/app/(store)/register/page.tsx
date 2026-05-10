@@ -2,26 +2,18 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { Eye, EyeOff, ArrowRight, Check } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Separator } from '@/components/ui/separator'
+import { Eye, EyeOff, Check } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
-import { toast } from 'sonner'
 
 const passwordRequirements = [
-  { label: 'At least 8 characters', test: (p: string) => p.length >= 8 },
-  { label: 'Contains a number', test: (p: string) => /\d/.test(p) },
+  { label: 'At least 8 characters',    test: (p: string) => p.length >= 8 },
+  { label: 'Contains a number',         test: (p: string) => /\d/.test(p) },
   { label: 'Contains uppercase letter', test: (p: string) => /[A-Z]/.test(p) },
 ]
 
 export default function RegisterPage() {
-  const router = useRouter()
   const { register } = useAuth()
-  
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -37,66 +29,43 @@ export default function RegisterPage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
-    // Clear error when user types
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }))
-    }
+    if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }))
   }
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
-
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = 'First name is required'
-    }
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = 'Last name is required'
-    }
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required'
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email'
-    }
-    if (!formData.password) {
-      newErrors.password = 'Password is required'
-    } else if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters'
-    }
-    if (!acceptTerms) {
-      newErrors.terms = 'You must accept the terms and conditions'
-    }
-
+    if (!formData.firstName.trim()) newErrors.firstName = 'Required'
+    if (!formData.lastName.trim())  newErrors.lastName  = 'Required'
+    if (!formData.email.trim())     newErrors.email     = 'Required'
+    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Invalid email'
+    if (!formData.password)         newErrors.password  = 'Required'
+    else if (formData.password.length < 8) newErrors.password = 'Minimum 8 characters'
+    if (!acceptTerms)               newErrors.terms     = 'Please accept the terms'
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
     if (!validateForm()) return
-
     setIsLoading(true)
     setErrors({})
-
     try {
       await register({
         first_name: formData.firstName,
-        last_name: formData.lastName,
-        email: formData.email,
-        password: formData.password,
-        phone: formData.phoneNumber,
+        last_name:  formData.lastName,
+        email:      formData.email,
+        password:   formData.password,
+        phone:      formData.phoneNumber,
       })
     } catch (err: any) {
-      console.error('Registration error:', err)
       const errorData = err.response?.data
-      
       if (errorData?.errors) {
-        // Map Laravel validation errors to our state
         const newErrors: Record<string, string> = {}
-        if (errorData.errors.email) newErrors.email = errorData.errors.email[0]
-        if (errorData.errors.password) newErrors.password = errorData.errors.password[0]
+        if (errorData.errors.email)      newErrors.email     = errorData.errors.email[0]
+        if (errorData.errors.password)   newErrors.password  = errorData.errors.password[0]
         if (errorData.errors.first_name) newErrors.firstName = errorData.errors.first_name[0]
-        if (errorData.errors.last_name) newErrors.lastName = errorData.errors.last_name[0]
+        if (errorData.errors.last_name)  newErrors.lastName  = errorData.errors.last_name[0]
         setErrors(newErrors)
       }
     } finally {
@@ -105,154 +74,281 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md space-y-8">
-        {/* Header */}
-        <div className="text-center">
-          <Link href="/" className="inline-flex items-center gap-2 mb-6">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-              <span className="text-lg font-bold text-primary-foreground">LX</span>
-            </div>
-          </Link>
-          <h1 className="text-2xl font-bold">Create an account</h1>
-          <p className="text-muted-foreground mt-2">
-            Join us and start shopping
-          </p>
-        </div>
+    <div className="min-h-screen flex">
+      {/* ── Left — editorial image panel ──────────────────────────── */}
+      <div className="hidden lg:block lg:w-1/2 relative overflow-hidden">
+        <div
+          className="absolute inset-0 w-full h-full"
+          style={{
+            backgroundImage:
+              'url(https://images.unsplash.com/photo-1558769132-cb1aea458c5e?q=80&w=1200&auto=format&fit=crop)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center top',
+          }}
+        />
+        <div className="absolute inset-0 bg-black/25" />
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-4">
+        <div className="absolute inset-0 flex flex-col justify-between p-12">
+          <Link href="/">
+            <span
+              className="text-2xl tracking-[0.35em] uppercase text-white font-normal"
+              style={{ fontFamily: 'var(--font-serif)' }}
+            >
+              LUXE
+            </span>
+          </Link>
+          <div>
+            <p
+              className="text-[10px] tracking-[0.3em] uppercase text-white/60 mb-3"
+              style={{ fontFamily: 'var(--font-sans)' }}
+            >
+              New Member
+            </p>
+            <p
+              className="text-3xl text-white font-normal leading-snug max-w-xs"
+              style={{ fontFamily: 'var(--font-serif)' }}
+            >
+              Style is a way<br />to say who you are.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Right — form panel ─────────────────────────────────────── */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center px-8 md:px-16 py-16 bg-white overflow-y-auto">
+        <div className="w-full max-w-sm">
+
+          {/* Mobile brand */}
+          <Link href="/" className="block lg:hidden mb-10">
+            <span
+              className="text-2xl tracking-[0.35em] uppercase text-black font-normal"
+              style={{ fontFamily: 'var(--font-serif)' }}
+            >
+              LUXE
+            </span>
+          </Link>
+
+          {/* Heading */}
+          <div className="mb-10">
+            <p
+              className="text-[10px] tracking-[0.3em] uppercase text-stone-400 mb-3"
+              style={{ fontFamily: 'var(--font-sans)' }}
+            >
+              Join us
+            </p>
+            <h1
+              className="text-4xl font-normal text-black"
+              style={{ fontFamily: 'var(--font-serif)' }}
+            >
+              Create Account
+            </h1>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* First + Last name row */}
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="firstName">First Name</Label>
-                <Input
+              {/* First name */}
+              <div className="relative">
+                <input
                   id="firstName"
                   name="firstName"
-                  placeholder="John"
                   value={formData.firstName}
                   onChange={handleChange}
-                  className="mt-1"
+                  placeholder=" "
+                  className="peer w-full border-0 border-b border-stone-200 focus:border-black outline-none bg-transparent pt-5 pb-2 text-sm text-black placeholder-transparent transition-colors duration-300"
+                  style={{ fontFamily: 'var(--font-sans)' }}
                 />
+                <label
+                  htmlFor="firstName"
+                  className="absolute top-5 left-0 text-stone-400 text-xs tracking-[0.15em] uppercase transition-all duration-300 peer-placeholder-shown:top-5 peer-placeholder-shown:text-xs peer-focus:top-0 peer-focus:text-[10px] peer-not-placeholder-shown:top-0 peer-not-placeholder-shown:text-[10px]"
+                  style={{ fontFamily: 'var(--font-sans)' }}
+                >
+                  First
+                </label>
                 {errors.firstName && (
-                  <p className="text-destructive text-xs mt-1">{errors.firstName}</p>
+                  <p className="text-[10px] text-rose-400 mt-1" style={{ fontFamily: 'var(--font-sans)' }}>
+                    {errors.firstName}
+                  </p>
                 )}
               </div>
-              <div>
-                <Label htmlFor="lastName">Last Name</Label>
-                <Input
+
+              {/* Last name */}
+              <div className="relative">
+                <input
                   id="lastName"
                   name="lastName"
-                  placeholder="Doe"
                   value={formData.lastName}
                   onChange={handleChange}
-                  className="mt-1"
+                  placeholder=" "
+                  className="peer w-full border-0 border-b border-stone-200 focus:border-black outline-none bg-transparent pt-5 pb-2 text-sm text-black placeholder-transparent transition-colors duration-300"
+                  style={{ fontFamily: 'var(--font-sans)' }}
                 />
+                <label
+                  htmlFor="lastName"
+                  className="absolute top-5 left-0 text-stone-400 text-xs tracking-[0.15em] uppercase transition-all duration-300 peer-placeholder-shown:top-5 peer-placeholder-shown:text-xs peer-focus:top-0 peer-focus:text-[10px] peer-not-placeholder-shown:top-0 peer-not-placeholder-shown:text-[10px]"
+                  style={{ fontFamily: 'var(--font-sans)' }}
+                >
+                  Last
+                </label>
                 {errors.lastName && (
-                  <p className="text-destructive text-xs mt-1">{errors.lastName}</p>
+                  <p className="text-[10px] text-rose-400 mt-1" style={{ fontFamily: 'var(--font-sans)' }}>
+                    {errors.lastName}
+                  </p>
                 )}
               </div>
             </div>
 
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input
+            {/* Email */}
+            <div className="relative">
+              <input
                 id="email"
                 name="email"
                 type="email"
-                placeholder="you@example.com"
                 value={formData.email}
                 onChange={handleChange}
-                className="mt-1"
+                placeholder=" "
+                className="peer w-full border-0 border-b border-stone-200 focus:border-black outline-none bg-transparent pt-5 pb-2 text-sm text-black placeholder-transparent transition-colors duration-300"
+                style={{ fontFamily: 'var(--font-sans)' }}
               />
+              <label
+                htmlFor="email"
+                className="absolute top-5 left-0 text-stone-400 text-xs tracking-[0.15em] uppercase transition-all duration-300 peer-placeholder-shown:top-5 peer-placeholder-shown:text-xs peer-focus:top-0 peer-focus:text-[10px] peer-not-placeholder-shown:top-0 peer-not-placeholder-shown:text-[10px]"
+                style={{ fontFamily: 'var(--font-sans)' }}
+              >
+                Email
+              </label>
               {errors.email && (
-                <p className="text-destructive text-xs mt-1">{errors.email}</p>
+                <p className="text-[10px] text-rose-400 mt-1" style={{ fontFamily: 'var(--font-sans)' }}>
+                  {errors.email}
+                </p>
               )}
             </div>
 
-            <div>
-              <Label htmlFor="password">Password</Label>
-              <div className="relative mt-1">
-                <Input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Create a password"
-                  value={formData.password}
-                  onChange={handleChange}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
+            {/* Password */}
+            <div className="relative">
+              <input
+                id="password"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                value={formData.password}
+                onChange={handleChange}
+                placeholder=" "
+                className="peer w-full border-0 border-b border-stone-200 focus:border-black outline-none bg-transparent pt-5 pb-2 text-sm text-black placeholder-transparent transition-colors duration-300 pr-8"
+                style={{ fontFamily: 'var(--font-sans)' }}
+              />
+              <label
+                htmlFor="password"
+                className="absolute top-5 left-0 text-stone-400 text-xs tracking-[0.15em] uppercase transition-all duration-300 peer-placeholder-shown:top-5 peer-placeholder-shown:text-xs peer-focus:top-0 peer-focus:text-[10px] peer-not-placeholder-shown:top-0 peer-not-placeholder-shown:text-[10px]"
+                style={{ fontFamily: 'var(--font-sans)' }}
+              >
+                Password
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-0 bottom-2.5 text-stone-400 hover:text-black transition-colors"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" strokeWidth={1.5} /> : <Eye className="w-4 h-4" strokeWidth={1.5} />}
+              </button>
               {errors.password && (
-                <p className="text-destructive text-xs mt-1">{errors.password}</p>
+                <p className="text-[10px] text-rose-400 mt-1" style={{ fontFamily: 'var(--font-sans)' }}>
+                  {errors.password}
+                </p>
               )}
-              
-              {/* Password Requirements */}
-              <div className="mt-2 space-y-1">
-                {passwordRequirements.map((req, i) => (
-                  <div key={i} className="flex items-center gap-2 text-xs">
-                    <Check className={`h-3 w-3 ${req.test(formData.password) ? 'text-success' : 'text-muted-foreground'}`} />
-                    <span className={req.test(formData.password) ? 'text-success' : 'text-muted-foreground'}>
-                      {req.label}
-                    </span>
-                  </div>
-                ))}
-              </div>
-              <Label htmlFor='phoneNumber' className='mt-2'>Phone Number <span className='text-gray-500 font-normal'>(Optional)</span></Label>
-              <Input 
-                id="phoneNumber" 
-                name="phoneNumber" 
-                type="text" 
-                placeholder="012-345-678" 
-                value={formData.phoneNumber} 
-                onChange={handleChange} 
-                className="mt-1"
-              />
-              {errors.phoneNumber && (
-                <p className="text-destructive text-xs mt-1">{errors.phoneNumber}</p>
+
+              {/* Password requirements */}
+              {formData.password.length > 0 && (
+                <div className="mt-3 space-y-1.5">
+                  {passwordRequirements.map((req, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <Check
+                        className={`w-3 h-3 transition-colors ${req.test(formData.password) ? 'text-black' : 'text-stone-300'}`}
+                        strokeWidth={2.5}
+                      />
+                      <span
+                        className={`text-[10px] tracking-wide transition-colors ${req.test(formData.password) ? 'text-black' : 'text-stone-300'}`}
+                        style={{ fontFamily: 'var(--font-sans)' }}
+                      >
+                        {req.label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
 
-            <div className="flex items-start gap-2">
-              <Checkbox 
-                id="terms" 
-                checked={acceptTerms}
-                onCheckedChange={(checked) => setAcceptTerms(checked as boolean)}
-                className="mt-1"
+            {/* Phone (optional) */}
+            <div className="relative">
+              <input
+                id="phoneNumber"
+                name="phoneNumber"
+                type="text"
+                value={formData.phoneNumber}
+                onChange={handleChange}
+                placeholder=" "
+                className="peer w-full border-0 border-b border-stone-200 focus:border-black outline-none bg-transparent pt-5 pb-2 text-sm text-black placeholder-transparent transition-colors duration-300"
+                style={{ fontFamily: 'var(--font-sans)' }}
               />
-              <Label htmlFor="terms" className="text-sm font-normal cursor-pointer leading-relaxed">
+              <label
+                htmlFor="phoneNumber"
+                className="absolute top-5 left-0 text-stone-400 text-xs tracking-[0.15em] uppercase transition-all duration-300 peer-placeholder-shown:top-5 peer-placeholder-shown:text-xs peer-focus:top-0 peer-focus:text-[10px] peer-not-placeholder-shown:top-0 peer-not-placeholder-shown:text-[10px]"
+                style={{ fontFamily: 'var(--font-sans)' }}
+              >
+                Phone{' '}
+                <span className="normal-case text-stone-300">(optional)</span>
+              </label>
+            </div>
+
+            {/* Accept terms */}
+            <div className="flex items-start gap-3 pt-1">
+              <button
+                type="button"
+                role="checkbox"
+                aria-checked={acceptTerms}
+                onClick={() => setAcceptTerms(!acceptTerms)}
+                className={`mt-0.5 w-4 h-4 border flex-shrink-0 flex items-center justify-center transition-colors duration-200 ${acceptTerms ? 'bg-black border-black' : 'border-stone-300'}`}
+              >
+                {acceptTerms && <span className="text-white text-[10px] leading-none">✓</span>}
+              </button>
+              <span
+                className="text-[11px] tracking-wide text-stone-400 leading-relaxed"
+                style={{ fontFamily: 'var(--font-sans)' }}
+              >
                 I agree to the{' '}
-                <Link href="#" className="text-accent hover:underline text-gray-500 font-medium">Terms of Service</Link>
+                <Link href="#" className="text-black underline underline-offset-2">Terms of Service</Link>
                 {' '}and{' '}
-                <Link href="#" className="text-accent hover:underline text-gray-500 font-medium">Privacy Policy</Link>
-              </Label>
+                <Link href="#" className="text-black underline underline-offset-2">Privacy Policy</Link>
+              </span>
             </div>
             {errors.terms && (
-              <p className="text-destructive text-xs">{errors.terms}</p>
+              <p className="text-[10px] text-rose-400" style={{ fontFamily: 'var(--font-sans)' }}>
+                {errors.terms}
+              </p>
             )}
-          </div>
 
-          <Button type="submit" className="w-full gap-2" disabled={isLoading}>
-            {isLoading ? 'Creating account...' : (
-              <>
-                Create Account
-                <ArrowRight className="h-4 w-4" />
-              </>
-            )}
-          </Button>
-        </form>
-        <p className="text-center text-sm text-muted-foreground">
-          Already have an account?{' '}
-          <Link href="/login" className="text-accent hover:underline font-medium text-black">
-            Sign in
-          </Link>
-        </p>
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full py-3.5 bg-black text-white text-[11px] tracking-[0.25em] uppercase hover:bg-stone-800 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+              style={{ fontFamily: 'var(--font-sans)' }}
+            >
+              {isLoading ? 'Creating account…' : 'Create Account'}
+            </button>
+          </form>
+
+          {/* Footer link */}
+          <p
+            className="mt-8 text-center text-[11px] tracking-[0.1em] text-stone-400"
+            style={{ fontFamily: 'var(--font-sans)' }}
+          >
+            Already have an account?{' '}
+            <Link href="/login" className="text-black hover:underline underline-offset-4">
+              Sign in
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   )
