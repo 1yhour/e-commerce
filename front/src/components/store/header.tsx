@@ -2,11 +2,8 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useState } from 'react'
-import { ShoppingCart, User, Search, Menu, X, Package, LogOut, LayoutDashboard } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
+import { useState, useEffect, useRef } from 'react'
+import { ShoppingCart, User, Menu, X, Package, LogOut, LayoutDashboard } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,220 +16,255 @@ import { useAuth } from '@/context/AuthContext'
 import { cn } from '@/lib/utils'
 
 const navigation = [
-  { name: 'Home', href: '/' },
-  { name: 'Products', href: '/products' },
-  { name: 'Categories', href: '/products?view=categories' },
+  { name: 'New Arrival', href: '/' },
+  { name: 'Women',       href: '/products/women' },
+  { name: 'Men',         href: '/products/men' },
+  { name: 'Kids',        href: '/products/kids' },
 ]
 
 export function Header() {
   const pathname = usePathname()
   const { user, isAuthenticated, logout, cartItemCount } = useAuth()
-  const [isSearchOpen, setIsSearchOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (searchQuery.trim()) {
-      window.location.href = `/products?search=${encodeURIComponent(searchQuery)}`
-    }
-  }
+  // Scroll detection: header becomes solid after scrolling past the hero
+  const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 60)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+  // Only go transparent on the homepage (store root)
+  const isHome = pathname === '/'
+  const transparent = isHome && !scrolled
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto px-4">
-        <div className="flex h-16 items-center justify-between">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-              <span className="text-sm font-bold text-primary-foreground">LX</span>
-            </div>
-            <span className="text-xl font-semibold tracking-tight">LUXE</span>
-          </Link>
+    <>
+      {/* ── Main Header ─────────────────────────────────────────────── */}
+      <header
+        className={cn(
+          'fixed top-0 left-0 right-0 z-50 transition-all duration-500',
+          transparent
+            ? 'bg-transparent border-b border-white/10'
+            : 'bg-white border-b border-black/8 shadow-[0_1px_0_0_rgba(0,0,0,0.06)]'
+        )}
+      >
+        <div className="max-w-screen-2xl mx-auto px-6 md:px-10">
+          <div className="flex items-center justify-between h-16 md:h-20">
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-6">
-            {navigation.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={cn(
-                  'text-sm font-medium transition-colors hover:text-primary',
-                  pathname === item.href ? 'text-primary' : 'text-muted-foreground'
-                )}
-              >
-                {item.name}
-              </Link>
-            ))}
-          </nav>
+            {/* ── Left: Desktop Nav ──────────────────────────────────── */}
+            <nav className="hidden md:flex items-center gap-8 flex-1">
+              {navigation.slice(0, 2).map((item) => (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={cn(
+                    'text-[10px] font-normal tracking-[0.2em] uppercase transition-colors duration-300',
+                    transparent
+                      ? 'text-white/80 hover:text-white'
+                      : 'text-stone-500 hover:text-black',
+                    pathname === item.href && (transparent ? 'text-white' : 'text-black')
+                  )}
+                  style={{ fontFamily: 'var(--font-sans)', letterSpacing: '0.2em' }}
+                >
+                  {item.name}
+                </Link>
+              ))}
+            </nav>
 
-          {/* Desktop Search */}
-          <div className="hidden md:flex items-center gap-4 flex-1 max-w-md mx-8">
-            <form onSubmit={handleSearch} className="relative w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search products..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 bg-secondary border-0"
-              />
-            </form>
-          </div>
-
-          {/* Actions */}
-          <div className="flex items-center gap-2">
-            {/* Mobile Search Toggle */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden"
-              onClick={() => setIsSearchOpen(!isSearchOpen)}
+            {/* ── Center: Brand Wordmark ──────────────────────────────── */}
+            <Link
+              href="/"
+              className={cn(
+                'absolute left-1/2 -translate-x-1/2 transition-colors duration-300',
+                transparent ? 'text-white' : 'text-black'
+              )}
             >
-              <Search className="h-5 w-5" />
-              <span className="sr-only">Search</span>
-            </Button>
-
-            {/* Cart */}
-            <Link href="/cart">
-              <Button variant="ghost" size="icon" className="relative">
-                <ShoppingCart className="h-5 w-5" />
-                {cartItemCount > 0 && (
-                  <Badge 
-                    className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-accent text-accent-foreground"
-                  >
-                    {cartItemCount}
-                  </Badge>
-                )}
-                <span className="sr-only">Cart</span>
-              </Button>
+              <span
+                className="text-2xl md:text-3xl font-normal tracking-[0.35em] uppercase"
+                style={{ fontFamily: 'var(--font-serif)', letterSpacing: '0.35em' }}
+              >
+                LUXE
+              </span>
             </Link>
 
-            {/* User Menu */}
-            {isAuthenticated ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="rounded-full">
-                    {user?.avatar ? (
-                      <img
-                        src={user.avatar}
-                        alt={`${user.first_name} ${user.last_name}`}
-                        className="h-8 w-8 rounded-full object-cover"
-                      />
-                    ) : (
-                      <User className="h-5 w-5" />
-                    )}
-                    <span className="sr-only">User menu</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <div className="px-2 py-1.5">
-                    <p className="text-sm font-medium">{user?.first_name} {user?.last_name}</p>
-                    <p className="text-xs text-muted-foreground">{user?.email}</p>
-                  </div>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/orders" className="cursor-pointer">
-                      <Package className="mr-2 h-4 w-4" />
-                      My Orders
-                    </Link>
-                  </DropdownMenuItem>
-                  {user?.role?.name === 'Admin' && (
+            {/* ── Right: Desktop Nav (remaining) + Icons ──────────────── */}
+            <div className="hidden md:flex items-center gap-8 flex-1 justify-end">
+              {navigation.slice(2).map((item) => (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={cn(
+                    'text-[10px] font-normal tracking-[0.2em] uppercase transition-colors duration-300',
+                    transparent
+                      ? 'text-white/80 hover:text-white'
+                      : 'text-stone-500 hover:text-black',
+                    pathname === item.href && (transparent ? 'text-white' : 'text-black')
+                  )}
+                  style={{ fontFamily: 'var(--font-sans)', letterSpacing: '0.2em' }}
+                >
+                  {item.name}
+                </Link>
+              ))}
+
+              {/* Divider */}
+              <div className={cn('w-px h-4 mx-1', transparent ? 'bg-white/20' : 'bg-stone-200')} />
+
+              {/* Cart */}
+              <Link href="/cart" className="relative">
+                <button
+                  className={cn(
+                    'p-1 transition-colors duration-300',
+                    transparent ? 'text-white/80 hover:text-white' : 'text-stone-500 hover:text-black'
+                  )}
+                  aria-label="Cart"
+                >
+                  <ShoppingCart className="w-[18px] h-[18px]" strokeWidth={1.5} />
+                  {cartItemCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 w-4 h-4 flex items-center justify-center rounded-full bg-black text-white text-[9px] font-medium"
+                      style={{ fontFamily: 'var(--font-sans)' }}>
+                      {cartItemCount}
+                    </span>
+                  )}
+                </button>
+              </Link>
+
+              {/* User */}
+              {isAuthenticated ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      className={cn(
+                        'p-1 transition-colors duration-300',
+                        transparent ? 'text-white/80 hover:text-white' : 'text-stone-500 hover:text-black'
+                      )}
+                      aria-label="Account"
+                    >
+                      {user?.avatar ? (
+                        <img src={user.avatar} alt={user.first_name} className="w-[18px] h-[18px] rounded-full object-cover" />
+                      ) : (
+                        <User className="w-[18px] h-[18px]" strokeWidth={1.5} />
+                      )}
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-52 rounded-none border-stone-200 shadow-lg mt-2">
+                    <div className="px-3 py-2.5 border-b border-stone-100">
+                      <p className="text-xs font-medium text-black tracking-wide" style={{ fontFamily: 'var(--font-sans)' }}>
+                        {user?.first_name} {user?.last_name}
+                      </p>
+                      <p className="text-[11px] text-stone-400 mt-0.5">{user?.email}</p>
+                    </div>
                     <DropdownMenuItem asChild>
-                      <Link href="/admin" className="cursor-pointer">
-                        <LayoutDashboard className="mr-2 h-4 w-4" />
-                        Admin Dashboard
+                      <Link href="/orders" className="cursor-pointer text-xs tracking-wide text-stone-600 hover:text-black">
+                        <Package className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                        My Orders
                       </Link>
                     </DropdownMenuItem>
-                  )}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={logout} className="cursor-pointer text-destructive">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Sign out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <Link href="/login">
-                <Button variant="ghost" size="sm">
-                  Sign in
-                </Button>
-              </Link>
-            )}
-
-            {/* Mobile Menu */}
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="md:hidden">
-                  <Menu className="h-5 w-5" />
-                  <span className="sr-only">Menu</span>
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right" className="w-[300px]">
-                <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-                <nav className="flex flex-col gap-4 mt-8">
-                  {navigation.map((item) => (
-                    <Link
-                      key={item.name}
-                      href={item.href}
-                      className={cn(
-                        'text-lg font-medium transition-colors hover:text-primary',
-                        pathname === item.href ? 'text-primary' : 'text-muted-foreground'
-                      )}
-                    >
-                      {item.name}
-                    </Link>
-                  ))}
-                  <div className="border-t border-border pt-4 mt-4">
-                    {isAuthenticated ? (
-                      <>
-                        <Link href="/orders" className="flex items-center gap-2 py-2 text-muted-foreground hover:text-primary">
-                          <Package className="h-5 w-5" />
-                          My Orders
+                    {user?.role?.name === 'Admin' && (
+                      <DropdownMenuItem asChild>
+                        <Link href="/admin" className="cursor-pointer text-xs tracking-wide text-stone-600 hover:text-black">
+                          <LayoutDashboard className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                          Admin Dashboard
                         </Link>
-                        {user?.role?.name === 'Admin' && (
-                          <Link href="/admin" className="flex items-center gap-2 py-2 text-muted-foreground hover:text-primary">
-                            <LayoutDashboard className="h-5 w-5" />
-                            Admin Dashboard
-                          </Link>
-                        )}
-                        <button
-                          onClick={logout}
-                          className="flex items-center gap-2 py-2 text-destructive w-full"
-                        >
-                          <LogOut className="h-5 w-5" />
-                          Sign out
-                        </button>
-                      </>
-                    ) : (
-                      <Link href="/login" className="flex items-center gap-2 py-2 text-muted-foreground hover:text-primary">
-                        <User className="h-5 w-5" />
-                        Sign in
-                      </Link>
+                      </DropdownMenuItem>
                     )}
+                    <DropdownMenuSeparator className="bg-stone-100" />
+                    <DropdownMenuItem onClick={logout} className="cursor-pointer text-xs tracking-wide text-rose-500 hover:text-rose-700">
+                      <LogOut className="mr-2 h-3.5 w-3.5" strokeWidth={1.5} />
+                      Sign out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Link
+                  href="/login"
+                  className={cn(
+                    'text-[10px] tracking-[0.2em] uppercase transition-colors duration-300',
+                    transparent ? 'text-white/80 hover:text-white' : 'text-stone-500 hover:text-black'
+                  )}
+                  style={{ fontFamily: 'var(--font-sans)', letterSpacing: '0.2em' }}
+                >
+                  Sign In
+                </Link>
+              )}
+            </div>
+
+            {/* ── Mobile: Logo + Icons ─────────────────────────────────── */}
+            <div className="flex md:hidden items-center gap-4 ml-auto">
+              <Link href="/cart" className="relative p-1">
+                <ShoppingCart className={cn('w-5 h-5', transparent ? 'text-white' : 'text-black')} strokeWidth={1.5} />
+                {cartItemCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 flex items-center justify-center rounded-full bg-black text-white text-[9px]">
+                    {cartItemCount}
+                  </span>
+                )}
+              </Link>
+
+              {/* Mobile Menu Sheet */}
+              <Sheet>
+                <SheetTrigger asChild>
+                  <button className={cn('p-1', transparent ? 'text-white' : 'text-black')} aria-label="Menu">
+                    <Menu className="w-5 h-5" strokeWidth={1.5} />
+                  </button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-[280px] p-0 border-l border-stone-200">
+                  <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+                  <div className="flex flex-col h-full">
+                    {/* Sheet brand */}
+                    <div className="px-8 py-7 border-b border-stone-100">
+                      <span className="text-xl tracking-[0.3em] uppercase" style={{ fontFamily: 'var(--font-serif)' }}>
+                        LUXE
+                      </span>
+                    </div>
+                    <nav className="flex flex-col px-8 py-8 gap-6">
+                      {navigation.map((item) => (
+                        <Link
+                          key={item.name}
+                          href={item.href}
+                          className={cn(
+                            'text-[11px] tracking-[0.2em] uppercase transition-colors',
+                            pathname === item.href ? 'text-black' : 'text-stone-400 hover:text-black'
+                          )}
+                          style={{ fontFamily: 'var(--font-sans)' }}
+                        >
+                          {item.name}
+                        </Link>
+                      ))}
+                    </nav>
+                    <div className="mt-auto px-8 py-8 border-t border-stone-100 flex flex-col gap-4">
+                      {isAuthenticated ? (
+                        <>
+                          <p className="text-[11px] tracking-widest uppercase text-stone-400" style={{ fontFamily: 'var(--font-sans)' }}>
+                            {user?.first_name} {user?.last_name}
+                          </p>
+                          <Link href="/orders" className="flex items-center gap-2 text-[11px] tracking-[0.15em] uppercase text-stone-500 hover:text-black">
+                            <Package className="h-4 w-4" strokeWidth={1.5} /> My Orders
+                          </Link>
+                          {user?.role?.name === 'Admin' && (
+                            <Link href="/admin" className="flex items-center gap-2 text-[11px] tracking-[0.15em] uppercase text-stone-500 hover:text-black">
+                              <LayoutDashboard className="h-4 w-4" strokeWidth={1.5} /> Dashboard
+                            </Link>
+                          )}
+                          <button onClick={logout} className="flex items-center gap-2 text-[11px] tracking-[0.15em] uppercase text-rose-400 hover:text-rose-600 text-left">
+                            <LogOut className="h-4 w-4" strokeWidth={1.5} /> Sign Out
+                          </button>
+                        </>
+                      ) : (
+                        <Link href="/login" className="text-[11px] tracking-[0.2em] uppercase text-stone-500 hover:text-black" style={{ fontFamily: 'var(--font-sans)' }}>
+                          Sign In
+                        </Link>
+                      )}
+                    </div>
                   </div>
-                </nav>
-              </SheetContent>
-            </Sheet>
+                </SheetContent>
+              </Sheet>
+            </div>
+
           </div>
         </div>
+      </header>
 
-        {/* Mobile Search Bar */}
-        {isSearchOpen && (
-          <div className="md:hidden pb-4">
-            <form onSubmit={handleSearch} className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search products..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 bg-secondary border-0"
-                autoFocus
-              />
-            </form>
-          </div>
-        )}
-      </div>
-    </header>
+      
+    </>
   )
 }

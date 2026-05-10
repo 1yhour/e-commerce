@@ -1,8 +1,20 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
-import { Montserrat } from 'next/font/google'
-const montserrat = Montserrat({ subsets: ['latin'], variable: '--font-sans' });
+import { Cormorant_Garamond, Jost } from 'next/font/google'
+
+const cormorant = Cormorant_Garamond({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  style: ['normal', 'italic'],
+  variable: '--font-serif',
+});
+
+const jost = Jost({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600'],
+  variable: '--font-sans',
+});
 
 export const metadata: Metadata = {
   title: 'LUXE - Premium E-Commerce',
@@ -39,7 +51,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`bg-background ${montserrat.variable}`}>
+    <html lang="en" className={`bg-background ${cormorant.variable} ${jost.variable}`}>
       <body className="font-sans antialiased min-h-screen">
         <AuthProvider>
           {children}
