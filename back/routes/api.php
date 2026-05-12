@@ -43,3 +43,13 @@ Route::middleware('auth:api')->group(function () {
     // TODO: add product, order, cart routes here
     // Route::apiResource('products', ProductController::class);
 });
+
+// Public product routes
+Route::get('/products', [ProductController::class, 'index']);
+Route::get('/products/{product}', [ProductController::class, 'show']);
+
+// Protected admin routes
+Route::group(['middleware' => ['auth:api']], function () {
+    // This single line generates store, update, and destroy routes
+    Route::apiResource('products', ProductController::class)->except(['index', 'show']);
+});
