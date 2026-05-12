@@ -2,7 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use Illuminate\Support\Facades\Route;
-
+use App\Http\Controllers\Api\ProductController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -49,7 +49,11 @@ Route::get('/products', [ProductController::class, 'index']);
 Route::get('/products/{product}', [ProductController::class, 'show']);
 
 // Protected admin routes
-Route::group(['middleware' => ['auth:api']], function () {
-    // This single line generates store, update, and destroy routes
-    Route::apiResource('products', ProductController::class)->except(['index', 'show']);
+Route::middleware('auth:api')->group(function () {
+    Route::post('/auth/logout', [AuthController::class, 'logout']);
+
+    // Products CRUD — admin only
+    Route::post('/products',           [ProductController::class, 'store']);
+    Route::post('/products/{product}', [ProductController::class, 'update']); // POST + _method=PUT
+    Route::delete('/products/{product}', [ProductController::class, 'destroy']);
 });

@@ -111,4 +111,9 @@ class Product extends Model
     {
         return $this->stock_quantity > 0;
     }
+
+    public function getImageAttribute()
+    {
+        return $this->primaryImage?->image_url;
+    }
 }
