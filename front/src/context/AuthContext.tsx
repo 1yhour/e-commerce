@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { useRouter } from 'next/navigation'
 import axios from 'axios'
 import { toast } from 'sonner'
-
+import api from '@/lib/axios'
 interface Role {
   id: string
   name: string
@@ -36,17 +36,6 @@ interface AuthContextType {
   cartItemCount: number
 }
 
-//talk directly to laravel
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8080/api'
-
-const api = axios.create({
-  baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-    Accept: 'application/json',
-  },
-})
-
 //context
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
@@ -57,18 +46,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [cartItemCount] = useState(0)
   const router = useRouter()
 
-// restore token on every request
-// Attach token to every outgoing request
-  useEffect(() => {
-    const interceptor = api.interceptors.request.use((config) => {
-      const t = localStorage.getItem('auth_token')
-      if (t) {
-        config.headers.Authorization = `Bearer ${t}`
-      }
-      return config
-    })
-    return () => api.interceptors.request.eject(interceptor)
-  }, [])
 
   /* ── Rehydrate session on mount ───────────────────────────────────────── */
 // validate token by fetching the current user from backend

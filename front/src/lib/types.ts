@@ -1,12 +1,24 @@
 export type OrderStatus = 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
 
+export interface ProductImage {
+  id: string;
+  image_url: string;
+  is_primary: boolean;
+}
+
 export interface Product {
   id: string;
-  name: string;
-  description?: string;
+  title: string;
+  name?: string; // fallback
+  slug: string;
+  description: string | null;
   price: number;
-  images: string[];
-  category: string;
+  stock_quantity: number;
+  is_active: boolean;
+  category_id?: string;
+  primary_image?: ProductImage;
+  images?: string[] | ProductImage[];
+  tag?: string | null;
 }
 
 export interface OrderItem {
