@@ -19,7 +19,7 @@ export const heroSlides: HeroSlide[] = [
     description:
       "Sustainably designed, effortlessly worn. Our pieces are made with premium materials, and wardrobe that stands the test of time.",
     ctaLabel: "Explore the Collections",
-    ctaHref: "/products",
+    ctaHref: "#explore-collections",
   },
   {
     id: 2,
@@ -30,6 +30,6 @@ export const heroSlides: HeroSlide[] = [
     description:
       "Explore the new autumn collection. Carefully curated for your daily adventures.",
     ctaLabel: "Explore the Collections",
-    ctaHref: "/products",
+    ctaHref: "#explore-collections",
   },
 ];

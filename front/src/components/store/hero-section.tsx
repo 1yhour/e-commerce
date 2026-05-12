@@ -16,6 +16,16 @@ interface HeroSectionProps {
 }
 
 export function HeroSection({ slides }: HeroSectionProps) {
+  const handleScroll = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    if (href.startsWith("#")) {
+      e.preventDefault();
+      const element = document.querySelector(href);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+  };
+
   return (
     <section className="w-full">
       <Carousel
@@ -65,7 +75,12 @@ export function HeroSection({ slides }: HeroSectionProps) {
                     className="rounded-none border-white bg-transparent text-white text-xs font-light tracking-[0.25em] uppercase px-10 py-8 hover:bg-white hover:text-black transition-all duration-500"
                     style={{ fontFamily: "var(--font-sans)" }}
                   >
-                    <Link href={slide.ctaHref}>{slide.ctaLabel}</Link>
+                    <Link 
+                      href={slide.ctaHref}
+                      onClick={(e) => handleScroll(e, slide.ctaHref)}
+                    >
+                      {slide.ctaLabel}
+                    </Link>
                   </Button>
                 </div>
               </div>

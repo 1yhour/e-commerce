@@ -16,10 +16,10 @@ import { useAuth } from '@/context/AuthContext'
 import { cn } from '@/lib/utils'
 
 const navigation = [
-  { name: 'New Arrival', href: '/' },
-  { name: 'Women',       href: '/products/women' },
-  { name: 'Men',         href: '/products/men' },
-  { name: 'Kids',        href: '/products/kids' },
+  { name: 'New Arrival', href: '/newarrival' },
+  { name: 'Women',       href: '/women' },
+  { name: 'Men',         href: '/men' },
+  { name: 'Kids',        href: '/kids' },
 ]
 
 export function Header() {
