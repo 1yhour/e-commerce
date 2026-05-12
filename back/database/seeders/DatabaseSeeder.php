@@ -57,8 +57,6 @@ class DatabaseSeeder extends Seeder
             'role_id' => $customerRole->id,
         ]);
 
-        // 5. Create some products
-        $products = Product::factory(20)->create();
 
         // 6. Create realistic orders for the Test Customer
         $testCustomer = User::where('email', 'customer@example.com')->first();
@@ -73,12 +71,6 @@ class DatabaseSeeder extends Seeder
             'address_id' => $address->id,
         ]);
 
-        foreach ($orders as $order) {
-            // Add 2-4 items to each order
-            OrderItem::factory(rand(2, 4))->create([
-                'order_id' => $order->id,
-                'product_id' => $products->random()->id,
-            ]);
-        }
+        
     }
 }
