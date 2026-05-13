@@ -10,11 +10,13 @@ import { DeleteModal } from "@/components/admin/product/deletemodal";
 import { toast } from "sonner";
 
 type SortKey = "title" | "price" | "stock_quantity";
-
+const MEN_CATEGORY_ID = process.env.NEXT_PUBLIC_MEN_CATEGORY_ID;
+const WOMEN_CATEGORY_ID = process.env.NEXT_PUBLIC_WOMEN_CATEGORY_ID;
+const KIDS_CATEGORY_ID = process.env.NEXT_PUBLIC_KIDS_CATEGORY_ID;
 const CATEGORY_MAP: Record<string, string> = {
-  "987e6543-e21b-12d3-a456-426614174000": "Women",
-  "123e4567-e89b-12d3-a456-426614174000": "Men",
-  "550e8400-e29b-41d4-a716-446655440000": "Kids",
+  [WOMEN_CATEGORY_ID as string]: "Women",
+  [MEN_CATEGORY_ID as string]: "Men",
+  [KIDS_CATEGORY_ID as string]: "Kids",
 };
 
 export default function AdminProductsPage() {

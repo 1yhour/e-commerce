@@ -10,7 +10,7 @@ class CategorySeeder extends Seeder
     {
         $categories = [
             [
-                'id' => '987e6543-e21b-12d3-a456-426614174000',
+                'id' => '12345678-e123-4567-e89b-12d3a4567890',
                 'name' => 'Women',
                 'slug' => 'women',
             ],
