@@ -61,7 +61,6 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/products/{product}', [ProductController::class, 'update']); // POST + _method=PUT
     Route::delete('/products/{product}', [ProductController::class, 'destroy']);
 });
-
 /*
 |--------------------------------------------------------------------------
 | API Routes — Phase 1: Cart, Checkout, KHQR
@@ -75,6 +74,7 @@ Route::middleware('auth:api')->group(function () {
 |
 */
 
+ 
 // ── Cart (public + authenticated) ────────────────────────────────────────────
 Route::prefix('cart')->group(function () {
     Route::get('/',                 [CartController::class, 'index']);       // GET  /api/cart
@@ -83,20 +83,20 @@ Route::prefix('cart')->group(function () {
     Route::delete('/items/{cartItem}', [CartController::class, 'removeItem']); // DELETE /api/cart/items/{id}
     Route::delete('/',              [CartController::class, 'clear']);       // DELETE /api/cart
 });
-
+ 
 // ── Authenticated routes ──────────────────────────────────────────────────────
 Route::middleware('auth:api')->group(function () {
-
+ 
     // Checkout
     Route::post('/checkout',  [CheckoutController::class, 'checkout']);  // POST /api/checkout
     Route::get('/orders',     [CheckoutController::class, 'index']);     // GET  /api/orders
     Route::get('/orders/{order}', [CheckoutController::class, 'show']); // GET  /api/orders/{id}
-
+ 
     // KHQR polling + refresh
     Route::get('/orders/{order}/payment/status',  [KhqrController::class, 'pollStatus']); // GET
     Route::post('/orders/{order}/khqr/refresh',   [KhqrController::class, 'refresh']);    // POST
 });
-
+ 
 // ── Dev-only: manually trigger payment confirmation ───────────────────────────
 // Remove this entire block before going to production (or guard with APP_ENV check).
 if (app()->environment('local', 'development')) {
