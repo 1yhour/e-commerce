@@ -112,6 +112,15 @@ class Product extends Model
         return $this->stock_quantity > 0;
     }
 
+    public function resolveRouteBinding($value, $field = null)
+    {
+        if (\Illuminate\Support\Str::isUuid($value)) {
+            return $this->where('id', $value)->firstOrFail();
+        }
+
+        return $this->where('slug', $value)->firstOrFail();
+    }
+
     public function getImageAttribute()
     {
         return $this->primaryImage?->image_url;

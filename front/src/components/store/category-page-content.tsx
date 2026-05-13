@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ChevronDown, Heart, ShoppingBag, Grid2X2, Grid3X3 } from "lucide-react";
+import { ChevronDown, Heart, ShoppingBag, Grid2X2, Grid3X3, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useCartStore } from "@/stores/cartStore";
+import { toast } from "sonner";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 type Product = {
@@ -103,6 +106,7 @@ function ProductCard({
   product: Product;
   size: "lg" | "sm";
 }) {
+  const router = useRouter();
   const [wished, setWished] = useState(false);
   
   // This is already correct in your file ✅
@@ -154,7 +158,16 @@ const imageUrl = product.primary_image?.image_url
 
         <div className="absolute bottom-0 left-0 right-0 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
           <button
-            onClick={(e) => e.preventDefault()}
+            onClick={async (e) => {
+              e.preventDefault();
+              try {
+                await useCartStore.getState().addItem(product.id, 1);
+                toast.success(`${product.title} added to bag`);
+                router.push('/checkout');
+              } catch (err) {
+                toast.error("Failed to add item to bag");
+              }
+            }}
             className="w-full bg-white/90 backdrop-blur-sm text-stone-900 flex items-center justify-center gap-2 py-3 text-[10px] tracking-[0.2em] uppercase hover:bg-stone-900 hover:text-white transition-colors"
           >
             <ShoppingBag className="w-3.5 h-3.5" strokeWidth={1.5} />

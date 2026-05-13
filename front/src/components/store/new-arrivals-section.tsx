@@ -3,8 +3,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { Heart } from "lucide-react";
+import { Heart, Loader2 } from "lucide-react";
 import api from "@/lib/api";
+import { useCartStore } from "@/stores/cartStore";
+import { toast } from "sonner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Product {
@@ -33,8 +35,11 @@ function SkeletonCard() {
   );
 }// Then use it anywhere without hardcoding
 const NEW_ARRIVAL_CATEGORY_ID = process.env.NEXT_PUBLIC_NEW_ARRIVAL_CATEGORY_ID!;
+import { useRouter } from "next/navigation";
+
 // ─── Main component ───────────────────────────────────────────────────────────
 export function NewArrivalsSection() {
+  const router = useRouter();
   const [products, setProducts]   = useState<Product[]>([]);
   const [loading, setLoading]     = useState(true);
   const [wishlisted, setWishlisted] = useState<string[]>([]);
@@ -188,8 +193,17 @@ export function NewArrivalsSection() {
                   {/* Quick add */}
                   <div className="absolute bottom-0 left-0 right-0 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out">
                     <button
-                      className="w-full py-3 bg-white text-black text-[10px] tracking-[0.2em] uppercase hover:bg-black hover:text-white transition-colors duration-300"
-                      onClick={(e) => e.preventDefault()}
+                      className="w-full py-3 bg-white text-black text-[10px] tracking-[0.2em] uppercase hover:bg-black hover:text-white transition-colors duration-300 flex items-center justify-center gap-2"
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        try {
+                          await useCartStore.getState().addItem(id, 1);
+                          toast.success(`${title} added to bag`);
+                          router.push('/checkout');
+                        } catch (err) {
+                          toast.error("Failed to add item to bag");
+                        }
+                      }}
                     >
                       Quick Add
                     </button>
