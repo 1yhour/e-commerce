@@ -79,4 +79,9 @@ export const getProducts = async (params?: Record<string, string>) => {
   return response.data;
 };
 
+export const getProduct = async (id: string) => {
+  const response = await api.get(`/products/${id}`);
+  return response.data;
+};
+
 export default api;

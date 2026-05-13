@@ -1,5 +1,5 @@
 import axios from "axios";
-
+import { getSessionId } from "./session";
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
   headers: {
@@ -13,6 +13,7 @@ api.interceptors.request.use((config) => {
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    config.headers['X-Session-Id'] = getSessionId();
   }
 
   // 
