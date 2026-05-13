@@ -1,12 +1,12 @@
 "use client";
 
 import { CategoryPageContent } from "@/components/store/category-page-content";
-
+const MEN_CATEGORY_ID = process.env.NEXT_PUBLIC_MEN_CATEGORY_ID;
 export default function MenPage() {
   return (
     <CategoryPageContent 
       categoryName="Men" 
-      categoryId="123e4567-e89b-12d3-a456-426614174000" 
+      categoryId={MEN_CATEGORY_ID as string}
     />
   );
 }

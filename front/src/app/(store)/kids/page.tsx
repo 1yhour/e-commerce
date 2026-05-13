@@ -1,10 +1,11 @@
 import { CategoryPageContent } from "@/components/store/category-page-content";
 
+const KIDS_CATEGORY_ID = process.env.NEXT_PUBLIC_KIDS_CATEGORY_ID;
 export default function KidsPage() {
   return (
     <CategoryPageContent 
       categoryName="Kids" 
-      categoryId="550e8400-e29b-41d4-a716-446655440000" 
+      categoryId={KIDS_CATEGORY_ID as string}
     />
   );
 }

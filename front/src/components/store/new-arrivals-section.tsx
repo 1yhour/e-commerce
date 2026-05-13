@@ -45,7 +45,7 @@ export function NewArrivalsSection() {
       .get("/products", { params: { category_id: NEW_ARRIVAL_CATEGORY_ID, sort: "latest", limit: 5 } })
       .then((res) => {
         const data = res.data?.data ?? res.data ?? [];
-        setProducts(Array.isArray(data) ? data.slice(0, 5) : []);
+        setProducts(Array.isArray(data) ? data.slice(0, 6) : []);
       })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -106,11 +106,11 @@ export function NewArrivalsSection() {
       </div>
 
       {/* ── Grid ───────────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-px bg-stone-100">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-px bg-stone-100">
 
-        {/* Loading skeletons — always exactly 5 */}
+        {/* Loading skeletons — always exactly 6 */}
         {loading &&
-          Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)
+          Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
         }
 
         {/* Empty state */}
@@ -122,7 +122,7 @@ export function NewArrivalsSection() {
           </div>
         )}
 
-        {/* Product cards — max 5 */}
+        {/* Product cards — max 6 */}
         {!loading &&
           products.map((product) => {
             const id       = String(product.id);

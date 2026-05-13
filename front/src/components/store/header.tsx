@@ -54,7 +54,7 @@ export function Header() {
 
             {/* ── Left: Desktop Nav ──────────────────────────────────── */}
             <nav className="hidden md:flex items-center gap-8 flex-1">
-              {navigation.slice(0, 2).map((item) => (
+              {navigation.slice(0, 1).map((item) => (
                 <Link
                   key={item.name}
                   href={item.href}
@@ -90,7 +90,7 @@ export function Header() {
 
             {/* ── Right: Desktop Nav (remaining) + Icons ──────────────── */}
             <div className="hidden md:flex items-center gap-8 flex-1 justify-end">
-              {navigation.slice(2).map((item) => (
+              {navigation.slice(1).map((item) => (
                 <Link
                   key={item.name}
                   href={item.href}

@@ -240,8 +240,8 @@ export default function AdminProductsPage() {
                   </div>
                   <div>
                     <p className="text-sm text-stone-900 font-normal leading-snug">{product.title}</p>
-                    {product.tag && (
-                      <span className="text-[9px] tracking-[0.15em] uppercase text-stone-400">{product.tag}</span>
+                    {product.category_id && (
+                      <span className="text-[9px] tracking-[0.15em] uppercase text-stone-400">{product.category_id}</span>
                     )}
                   </div>
                 </div>

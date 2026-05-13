@@ -3,6 +3,9 @@ import { X, Check, Loader2 } from "lucide-react";
 import { FloatInput } from "./floatinput";
 import type { Product, ProductFormData } from "@/data/adminProducts";
 
+const MEN_CATEGORY_ID = process.env.NEXT_PUBLIC_MEN_CATEGORY_ID;
+const WOMEN_CATEGORY_ID = process.env.NEXT_PUBLIC_WOMEN_CATEGORY_ID;
+const KIDS_CATEGORY_ID = process.env.NEXT_PUBLIC_KIDS_CATEGORY_ID;
 const emptyForm: ProductFormData = {
   title: "",
   slug: "",
@@ -14,7 +17,6 @@ const emptyForm: ProductFormData = {
   image: null,
 
 };
-
 export function ProductModal({
   mode,
   product,
@@ -158,10 +160,9 @@ export function ProductModal({
               className="w-full border-0 border-b border-stone-200 focus:border-stone-800 outline-none bg-transparent pt-5 pb-2 text-sm text-stone-900 appearance-none transition-colors duration-200"
             >
               <option value="" disabled>Select a category</option>
-              <option>New Arrival</option>
-              <option>Women</option>
-              <option>Men</option>
-              <option>Kids</option>
+              <option value={WOMEN_CATEGORY_ID}>Women</option>
+              <option value={MEN_CATEGORY_ID}>Men</option>
+              <option value={KIDS_CATEGORY_ID}>Kids</option>
             </select>
             <label className="absolute top-0 left-0 text-[10px] tracking-[0.15em] uppercase text-stone-400">
               Category
