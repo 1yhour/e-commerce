@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class KhqrTransaction extends Model
@@ -12,7 +12,11 @@ class KhqrTransaction extends Model
 
     public $timestamps = false;
 
-    protected $table = 'khqr_transactions';
+    const STATUS_GENERATED = 'generated';
+    const STATUS_SCANNED   = 'scanned';
+    const STATUS_PAID      = 'paid';
+    const STATUS_EXPIRED   = 'expired';
+    const STATUS_FAILED    = 'failed';
 
     protected $fillable = [
         'payment_id',
@@ -28,72 +32,47 @@ class KhqrTransaction extends Model
         'scanned_at',
         'paid_at',
         'expires_at',
+        'created_at',
     ];
 
     protected $casts = [
-        'amount'     => 'decimal:2',
+        'amount'     => 'float',
         'scanned_at' => 'datetime',
         'paid_at'    => 'datetime',
         'expires_at' => 'datetime',
         'created_at' => 'datetime',
     ];
 
-    // KHQR lifecycle statuses
-    const STATUS_GENERATED = 'generated'; // QR created, waiting for scan
-    const STATUS_SCANNED   = 'scanned';   // Customer opened/scanned the QR
-    const STATUS_PAID      = 'paid';      // Bakong API confirmed payment
-    const STATUS_EXPIRED   = 'expired';   // QR window passed
-    const STATUS_FAILED    = 'failed';    // Payment rejected
+    // ── Relationships ────────────────────────────────────────────────────────
 
-    /*
-    |--------------------------------------------------------------------------
-    | Relationships
-    |--------------------------------------------------------------------------
-    | PAYMENTS ||--o| KHQR_TRANSACTIONS : "details"
-    */
-
-    /**
-     * The parent payment record.
-     * Use this to access the order: $khqr->payment->order
-     */
     public function payment(): BelongsTo
     {
         return $this->belongsTo(Payment::class);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Helpers
-    |--------------------------------------------------------------------------
-    */
+    // ── Helpers ──────────────────────────────────────────────────────────────
 
-    /** Whether the QR code window is past its expiry. */
     public function isExpired(): bool
     {
         return $this->expires_at->isPast();
     }
 
-    /** Whether Bakong has confirmed this payment. */
-    public function isPaid(): bool
+    public function markScanned(): void
     {
-        return $this->status === self::STATUS_PAID;
+        if ($this->status === self::STATUS_GENERATED) {
+            $this->update(['status' => self::STATUS_SCANNED, 'scanned_at' => now()]);
+        }
     }
 
-    /**
-     * Shortcut to the order via the payment relationship.
-     * Usage: $khqr->order->id
-     */
-    public function getOrderAttribute(): Order
+    public function markPaid(): void
     {
-        return $this->payment->order;
+        $this->update(['status' => self::STATUS_PAID, 'paid_at' => now()]);
+        $this->payment->markPaid(); // cascade → Payment → Order
     }
 
-    /**
-     * Build the Bakong API polling URL for this transaction.
-     * Your service layer should call this endpoint to check payment status.
-     */
-    public function getBakongCheckUrlAttribute(): string
+    public function markExpired(): void
     {
-        return "https://api-bakong.nbc.gov.kh/v1/check_transaction_by_md5/{$this->md5}";
+        $this->update(['status' => self::STATUS_EXPIRED]);
+        $this->payment->update(['status' => Payment::STATUS_FAILED]);
     }
 }

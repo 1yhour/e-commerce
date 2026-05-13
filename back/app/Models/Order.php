@@ -3,18 +3,15 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Str;
 
 class Order extends Model
 {
-    use HasFactory;
-
-    // String primary key e.g. 'ORD-2026-A1B2C3'
-    protected $keyType    = 'string';
-    public    $incrementing = false;
+    public $incrementing = false;
+    protected $keyType   = 'string';
 
     protected $fillable = [
         'id', 'user_id', 'address_id', 'status',
@@ -22,66 +19,73 @@ class Order extends Model
     ];
 
     protected $casts = [
-        'subtotal'     => 'decimal:2',
-        'tax_amount'   => 'decimal:2',
-        'shipping_fee' => 'decimal:2',
-        'total_amount' => 'decimal:2',
+        'subtotal'      => 'float',
+        'tax_amount'    => 'float',
+        'shipping_fee'  => 'float',
+        'total_amount'  => 'float',
     ];
 
-    // Order status constants (mirrors DB enum)
+    // ── Order status constants ────────────────────────────────────────────────
+
     const STATUS_PENDING    = 'Pending Payment';
     const STATUS_PROCESSING = 'Processing';
     const STATUS_SHIPPED    = 'Shipped';
     const STATUS_COMPLETED  = 'Completed';
     const STATUS_CANCELLED  = 'Cancelled';
 
-    /*
-    |--------------------------------------------------------------------------
-    | Relationships
-    |--------------------------------------------------------------------------
-    | USERS     ||--o{ ORDERS      : "places"
-    | ADDRESSES ||--o{ ORDERS      : "shipped_to"
-    | ORDERS    ||--o{ ORDER_ITEMS : "includes"
-    | ORDERS    ||--|| PAYMENTS    : "processed_via"
-    */
+    // ── Boot: auto-generate order ID ─────────────────────────────────────────
 
-    /** The customer who placed this order. */
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::creating(function (Order $order) {
+            if (empty($order->id)) {
+                $order->id = static::generateId();
+            }
+        });
+    }
+
+    public static function generateId(): string
+    {
+        do {
+            $id = 'ORD-' . now()->year . '-' . strtoupper(Str::random(6));
+        } while (static::where('id', $id)->exists());
+
+        return $id;
+    }
+
+    // ── Relationships ────────────────────────────────────────────────────────
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    /** The shipping address for this order. */
     public function address(): BelongsTo
     {
         return $this->belongsTo(Address::class);
     }
 
-    /** All line items in this order. */
     public function items(): HasMany
     {
-        return $this->hasMany(OrderItem::class);
+        return $this->hasMany(OrderItem::class)->with('product.images');
     }
 
-    /** The payment record for this order (one-to-one). */
     public function payment(): HasOne
     {
         return $this->hasOne(Payment::class);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Helpers
-    |--------------------------------------------------------------------------
-    */
+    // ── Helpers ──────────────────────────────────────────────────────────────
 
     public function isPaid(): bool
     {
-        return optional($this->payment)->status === Payment::STATUS_SUCCESS;
+        return $this->payment && $this->payment->status === Payment::STATUS_PAID;
     }
 
-    public function isPending(): bool
+    public function markProcessing(): void
     {
-        return $this->status === self::STATUS_PENDING;
+        $this->update(['status' => self::STATUS_PROCESSING]);
     }
 }

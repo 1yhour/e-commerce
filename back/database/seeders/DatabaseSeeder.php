@@ -58,19 +58,6 @@ class DatabaseSeeder extends Seeder
         ]);
 
 
-        // 6. Create realistic orders for the Test Customer
-        $testCustomer = User::where('email', 'customer@example.com')->first();
-        
-        $address = Address::factory()->create([
-            'user_id' => $testCustomer->id,
-            'is_default' => true,
-        ]);
-
-        $orders = Order::factory(5)->create([
-            'user_id' => $testCustomer->id,
-            'address_id' => $address->id,
-        ]);
-
         
     }
 }

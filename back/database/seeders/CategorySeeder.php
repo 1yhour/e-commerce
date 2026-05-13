@@ -8,6 +8,7 @@ class CategorySeeder extends Seeder
 {
     public function run(): void
     {
+        
         $categories = [
             [
                 'id' => '12345678-e123-4567-e89b-12d3a4567890',
