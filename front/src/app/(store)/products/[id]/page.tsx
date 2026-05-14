@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, use } from "react"
-import { Plus, Minus, Loader2, ShoppingBag, ArrowLeft, Heart } from "lucide-react"
+import { Plus, Minus, Loader2, ShoppingBag} from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
@@ -177,10 +177,6 @@ export default function ProductDetailPage({ params: paramsPromise}: { params: Pr
                 <span className="text-stone-300 text-[10px] tracking-widest uppercase">No Image Available</span>
               </div>
             )}
-            
-            <button className="absolute top-6 right-6 p-3 bg-white/80 backdrop-blur-sm rounded-full text-stone-400 hover:text-red-500 transition-colors duration-300 shadow-sm opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0">
-               <Heart size={20} strokeWidth={1.5} />
-            </button>
           </div>
 
           {/* ─── RIGHT: Product Details ─────────────────────────────────────── */}

@@ -3,7 +3,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
-import { Heart, Loader2 } from "lucide-react";
 import api from "@/lib/api";
 import { useCartStore } from "@/stores/cartStore";
 import { toast } from "sonner";
@@ -172,23 +171,6 @@ export function NewArrivalsSection() {
                       {product.tag}
                     </span>
                   )}
-
-                  {/* Wishlist */}
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      toggleWishlist(id);
-                    }}
-                    className="absolute top-3 right-3 p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                    aria-label="Add to wishlist"
-                  >
-                    <Heart
-                      className="w-4 h-4 transition-colors duration-200"
-                      strokeWidth={1.5}
-                      fill={isWished ? "black" : "none"}
-                      stroke={isWished ? "black" : "white"}
-                    />
-                  </button>
 
                   {/* Quick add */}
                   <div className="absolute bottom-0 left-0 right-0 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out">

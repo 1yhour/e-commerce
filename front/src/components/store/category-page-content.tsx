@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ChevronDown, Heart, ShoppingBag, Grid2X2, Grid3X3, Loader2 } from "lucide-react";
+import { ChevronDown, ShoppingBag, Grid2X2, Grid3X3, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCartStore } from "@/stores/cartStore";
 import { toast } from "sonner";
@@ -123,23 +123,6 @@ const imageUrl = product.primary_image?.image_url
             {product.tag}
           </span>
         )}
-
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            setWished((p) => !p);
-          }}
-          className="absolute top-3 right-3 z-10 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-          aria-label="Add to wishlist"
-        >
-          <Heart
-            className={`w-5 h-5 transition-colors ${
-              wished ? "fill-stone-900 text-stone-900" : "text-stone-500"
-            }`}
-            strokeWidth={1.5}
-          />
-        </button>
-
         {imageUrl ? (
           <Image
             src={imageUrl}
