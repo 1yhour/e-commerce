@@ -2,124 +2,221 @@
 
 import { useEffect } from 'react'
 import Link from 'next/link'
-import { ArrowRight, ShoppingBag } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { ShoppingBag, ArrowLeft, Trash2, ChevronRight } from 'lucide-react'
 import { useCartStore } from '@/stores/cartStore'
 import CartItemRow from '@/components/cart/CartItemRow'
-import { Button } from '@/components/ui/button'
-import { formatCurrency } from '@/lib/utils'
-import { Skeleton } from '@/components/ui/skeleton'
 
-export default function CartPage() {
-  const { cart, isLoading, fetchCart, hasFetched } = useCartStore()
+// ── Tax / shipping mirrors CheckoutController logic ───────────────────────────
+const TAX_RATE      = 0.10
+const SHIPPING_FLAT = 3.00
+const FREE_SHIPPING = 50.00
 
-  useEffect(() => {
-    fetchCart()
-  }, [fetchCart])
+function calcTotals(subtotal: number) {
+  const tax      = Math.round(subtotal * TAX_RATE * 100) / 100
+  const shipping = subtotal >= FREE_SHIPPING ? 0 : SHIPPING_FLAT
+  const total    = Math.round((subtotal + tax + shipping) * 100) / 100
+  return { tax, shipping, total }
+}
 
-  if (isLoading && !hasFetched) {
-    return (
-      <div className="container mx-auto px-4 py-16 md:py-24">
-        <h1 className="text-3xl font-serif mb-8 text-[#1A1A1A]">Shopping Bag</h1>
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-          <div className="lg:col-span-8 space-y-6">
+// ── Loading skeleton ──────────────────────────────────────────────────────────
+
+function CartSkeleton() {
+  return (
+    <div className="min-h-screen bg-[#FAFAF8] px-4 py-12 md:px-8">
+      <div className="max-w-5xl mx-auto">
+        <div className="h-8 w-48 bg-[#E8E4DF] rounded animate-pulse mb-10" />
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
+          <div className="md:col-span-7 space-y-6">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="flex gap-4 py-4 border-b border-[#E8E4DF]">
-                <Skeleton className="h-24 w-24 rounded bg-[#F5F3F0]" />
-                <div className="flex-1 space-y-2">
-                  <Skeleton className="h-5 w-1/3 bg-[#F5F3F0]" />
-                  <Skeleton className="h-4 w-1/4 bg-[#F5F3F0]" />
+              <div key={i} className="flex gap-4">
+                <div className="w-20 h-20 bg-[#E8E4DF] rounded animate-pulse shrink-0" />
+                <div className="flex-1 space-y-3 py-1">
+                  <div className="h-4 bg-[#E8E4DF] rounded animate-pulse w-2/3" />
+                  <div className="h-4 bg-[#E8E4DF] rounded animate-pulse w-1/3" />
                 </div>
               </div>
             ))}
           </div>
-          <div className="lg:col-span-4">
-            <Skeleton className="h-64 w-full rounded bg-[#F5F3F0]" />
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (hasFetched && cart.items.length === 0) {
-    return (
-      <div className="container mx-auto px-4 py-24 md:py-32 flex flex-col items-center text-center">
-        <div className="w-20 h-20 bg-[#F5F3F0] rounded-full flex items-center justify-center mb-6">
-          <ShoppingBag className="text-[#9A9490]" size={32} />
-        </div>
-        <h1 className="text-3xl font-serif mb-4 text-[#1A1A1A]">Your bag is empty</h1>
-        <p className="text-[#6B6661] mb-10 max-w-md">
-          It looks like you haven't added anything to your bag yet. 
-          Explore our latest collections to find something you love.
-        </p>
-        <Button asChild className="rounded-full px-8 py-6 h-auto text-base">
-          <Link href="/newarrival">Start Shopping</Link>
-        </Button>
-      </div>
-    )
-  }
-
-  return (
-    <div className="container mx-auto px-4 py-16 md:py-24">
-      <div className="flex items-baseline justify-between mb-10 border-b border-[#E8E4DF] pb-6">
-        <h1 className="text-3xl md:text-4xl font-serif text-[#1A1A1A]">Shopping Bag</h1>
-        <span className="text-[#9A9490] font-medium">
-          {cart.total_items} {cart.total_items === 1 ? 'item' : 'items'}
-        </span>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
-        {/* Cart Items List */}
-        <div className="lg:col-span-8">
-          <div className="divide-y divide-[#E8E4DF]">
-            {cart.items.map((item) => (
-              <CartItemRow key={item.id} item={item} />
-            ))}
-          </div>
-        </div>
-
-        {/* Order Summary */}
-        <div className="lg:col-span-4">
-          <div className="bg-[#FBF9F7] rounded-2xl p-8 sticky top-24">
-            <h2 className="text-xl font-serif mb-6 text-[#1A1A1A]">Order Summary</h2>
-            
-            <div className="space-y-4 mb-8">
-              <div className="flex justify-between text-[#6B6661]">
-                <span>Subtotal</span>
-                <span>{formatCurrency(cart.subtotal)}</span>
-              </div>
-              <div className="flex justify-between text-[#6B6661]">
-                <span>Shipping</span>
-                <span>Calculated at checkout</span>
-              </div>
-              <div className="pt-4 border-t border-[#E8E4DF] flex justify-between font-semibold text-lg text-[#1A1A1A]">
-                <span>Total</span>
-                <span>{formatCurrency(cart.subtotal)}</span>
-              </div>
-            </div>
-
-            <Button asChild className="w-full rounded-full py-6 h-auto text-base group">
-              <Link href="/checkout">
-                Checkout 
-                <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </Link>
-            </Button>
-
-            <div className="mt-8 space-y-4">
-              <p className="text-xs text-[#9A9490] leading-relaxed text-center">
-                Shipping and taxes calculated at checkout. <br />
-                All transactions are secure and encrypted.
-              </p>
-              
-              <div className="flex justify-center items-center gap-4 grayscale opacity-50">
-                 {/* Icons or text for payment methods */}
-                 <span className="text-[10px] font-bold border border-stone-300 px-1 rounded">KHQR</span>
-                 <span className="text-[10px] font-bold border border-stone-300 px-1 rounded">VISA</span>
-                 <span className="text-[10px] font-bold border border-stone-300 px-1 rounded">MASTERCARD</span>
-              </div>
-            </div>
+          <div className="md:col-span-5">
+            <div className="h-64 bg-[#E8E4DF] rounded-2xl animate-pulse" />
           </div>
         </div>
       </div>
     </div>
+  )
+}
+
+// ── Empty state ───────────────────────────────────────────────────────────────
+
+function EmptyCart() {
+  return (
+    <div className="flex flex-col items-center justify-center py-28 text-center">
+      <div className="w-20 h-20 rounded-full bg-[#F0ECE8] flex items-center justify-center mb-6">
+        <ShoppingBag size={32} className="text-[#C0B9B0]" strokeWidth={1.5} />
+      </div>
+      <h2 className="text-xl font-semibold text-[#1A1A1A] mb-2">Your cart is empty</h2>
+      <p className="text-sm text-[#9A9490] mb-8 max-w-xs">
+        Add some items to get started
+      </p>
+      <Link
+        href="/"
+        className="flex items-center gap-2 px-6 py-3 rounded-full bg-[#1A1A1A] text-white text-sm font-medium
+                   hover:bg-[#333] active:scale-95 transition-all"
+      >
+        <ArrowLeft size={15} />
+        Continue Shopping
+      </Link>
+    </div>
+  )
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
+
+export default function CartPage() {
+  const { cart, isLoading, hasFetched, fetchCart, clearCart } = useCartStore()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (!hasFetched) fetchCart()
+  }, [hasFetched, fetchCart])
+
+  if (isLoading && !hasFetched) return <CartSkeleton />
+
+  const { tax, shipping, total } = calcTotals(cart.subtotal)
+  const isEmpty = cart.items.length === 0
+
+  return (
+    <>
+      <style>{`
+        @keyframes page-in {
+          from { opacity: 0; transform: translateY(12px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .page-in { animation: page-in 0.35s ease both; }
+      `}</style>
+
+      <div className="min-h-screen bg-[#FAFAF8]">
+        {/* ── Top bar ─────────────────────────────────────────────────────── */}
+        <div className="border-b border-[#E8E4DF] bg-white/80 backdrop-blur-sm sticky top-0 z-10">
+          <div className="max-w-5xl mx-auto px-4 md:px-8 py-4 flex items-center justify-between">
+            <Link
+              href="/"
+              className="flex items-center gap-1.5 text-sm text-[#6B6560] hover:text-[#1A1A1A] transition-colors"
+            >
+              <ArrowLeft size={15} />
+              Continue Shopping
+            </Link>
+            <h1 className="text-base font-semibold text-[#1A1A1A] tracking-wide">
+              Shopping Cart
+              {cart.total_items > 0 && (
+                <span className="ml-2 text-xs font-normal text-[#9A9490]">
+                  ({cart.total_items} {cart.total_items === 1 ? 'item' : 'items'})
+                </span>
+              )}
+            </h1>
+            <div className="w-28" /> {/* spacer to center heading */}
+          </div>
+        </div>
+
+        {/* ── Body ────────────────────────────────────────────────────────── */}
+        <div className="max-w-5xl mx-auto px-4 md:px-8 py-10">
+          {isEmpty ? (
+            <EmptyCart />
+          ) : (
+            <div className="page-in grid grid-cols-1 md:grid-cols-12 gap-10 items-start">
+
+              {/* ── Left: item list ───────────────────────────────────────── */}
+              <div className="md:col-span-7">
+                <div className="divide-y divide-[#F0ECE8]">
+                  {cart.items.map((item) => (
+                    <CartItemRow key={item.id} item={item} compact={false} />
+                  ))}
+                </div>
+
+                {/* Clear cart */}
+                <button
+                  onClick={() => clearCart()}
+                  className="mt-6 flex items-center gap-1.5 text-xs text-[#9A9490] hover:text-red-400
+                             transition-colors"
+                >
+                  <Trash2 size={13} />
+                  Clear cart
+                </button>
+              </div>
+
+              {/* ── Right: order summary ─────────────────────────────────── */}
+              <div className="md:col-span-5">
+                <div className="bg-white border border-[#E8E4DF] rounded-2xl p-6 space-y-4 sticky top-24">
+                  <h2 className="text-sm font-semibold text-[#1A1A1A] uppercase tracking-widest">
+                    Order Summary
+                  </h2>
+
+                  {/* Line rows */}
+                  <div className="space-y-2.5 text-sm">
+                    <div className="flex justify-between text-[#6B6560]">
+                      <span>Subtotal</span>
+                      <span className="font-medium text-[#1A1A1A]">${cart.subtotal.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-[#6B6560]">
+                      <span>Estimated Tax (10%)</span>
+                      <span className="font-medium text-[#1A1A1A]">${tax.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-[#6B6560]">
+                      <span>Shipping</span>
+                      <span className="font-medium text-[#1A1A1A]">
+                        {shipping === 0 ? (
+                          <span className="text-emerald-600 font-semibold">Free</span>
+                        ) : (
+                          `$${shipping.toFixed(2)}`
+                        )}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-[#F0ECE8] pt-3 flex justify-between items-center">
+                    <span className="text-sm font-semibold text-[#1A1A1A]">Total</span>
+                    <span className="text-lg font-bold text-[#1A1A1A]">${total.toFixed(2)}</span>
+                  </div>
+
+                  {/* Free shipping progress */}
+                  {cart.subtotal < FREE_SHIPPING && (
+                    <div className="text-xs text-[#9A9490] bg-[#F5F3F0] rounded-xl p-3">
+                      Add{' '}
+                      <span className="font-semibold text-[#C9A96E]">
+                        ${(FREE_SHIPPING - cart.subtotal).toFixed(2)}
+                      </span>{' '}
+                      more for free shipping
+                      <div className="mt-2 h-1 rounded-full bg-[#E8E4DF] overflow-hidden">
+                        <div
+                          className="h-full bg-[#C9A96E] rounded-full transition-all duration-500"
+                          style={{ width: `${(cart.subtotal / FREE_SHIPPING) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* CTA */}
+                  <button
+                    onClick={() => router.push('/checkout')}
+                    className="w-full flex items-center justify-center gap-2 py-3.5 rounded-full
+                               bg-[#1A1A1A] text-white text-sm font-semibold tracking-wide
+                               hover:bg-[#333] active:scale-[0.98] transition-all"
+                  >
+                    Proceed to Checkout
+                    <ChevronRight size={16} />
+                  </button>
+
+                  <p className="text-center text-[10px] text-[#B0AAA4] uppercase tracking-wider">
+                    Secure checkout · KHQR payment
+                  </p>
+                </div>
+              </div>
+
+            </div>
+          )}
+        </div>
+      </div>
+    </>
   )
 }

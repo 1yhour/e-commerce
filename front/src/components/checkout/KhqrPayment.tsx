@@ -1,155 +1,345 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
-import Image from 'next/image'
-import { CheckCircle2, Loader2, RefreshCw, AlertCircle, Clock } from 'lucide-react'
-import { checkoutApi, type KhqrData, type PaymentStatus } from '@/lib/api/cart'
-import { Button } from '@/components/ui/button'
-import { toast } from 'sonner'
-import { formatCurrency } from '@/lib/utils'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { QRCodeSVG } from 'qrcode.react'
+import { checkoutApi, type KhqrData } from '@/lib/api/cart'
+import {
+  CheckCircle2,
+  Clock,
+  RefreshCw,
+  Smartphone,
+  AlertTriangle,
+  Loader2,
+} from 'lucide-react'
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+type PaymentState = 'waiting' | 'scanned' | 'paid' | 'expired' | 'error'
 
 interface Props {
   orderId: string
   initialKhqr: KhqrData
+  onPaymentSuccess: (orderId: string) => void
 }
 
-export default function KhqrPayment({ orderId, initialKhqr }: Props) {
-  const router = useRouter()
-  const [khqr, setKhqr] = useState<KhqrData>(initialKhqr)
-  const [status, setStatus] = useState<'pending' | 'paid' | 'expired' | 'failed'>('pending')
-  const [timeLeft, setTimeLeft] = useState<number>(0)
-  const [isRefreshing, setIsRefreshing] = useState(false)
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
-  // Calculate time remaining
-  useEffect(() => {
-    const calculateTime = () => {
-      const expiry = new Date(khqr.expires_at).getTime()
-      const now = new Date().getTime()
-      const diff = Math.max(0, Math.floor((expiry - now) / 1000))
-      setTimeLeft(diff)
-      if (diff === 0 && status === 'pending') {
-        setStatus('expired')
+function secondsUntil(iso: string): number {
+  return Math.max(0, Math.floor((new Date(iso).getTime() - Date.now()) / 1000))
+}
+
+function formatCountdown(sec: number): string {
+  const m = Math.floor(sec / 60)
+  const s = sec % 60
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
+
+export default function KhqrPayment({ orderId, initialKhqr, onPaymentSuccess }: Props) {
+  const [khqr, setKhqr]               = useState<KhqrData>(initialKhqr)
+  const [state, setState]             = useState<PaymentState>('waiting')
+  const [countdown, setCountdown]     = useState(() => secondsUntil(initialKhqr.expires_at))
+  const [isRefreshing, setRefreshing] = useState(false)
+  const [pollError, setPollError]     = useState(false)
+
+  const pollRef      = useRef<ReturnType<typeof setInterval> | null>(null)
+  const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const isPaidRef    = useRef(false)
+
+  // ── Stop all timers ──────────────────────────────────────────────────────
+  const stopAll = useCallback(() => {
+    if (pollRef.current)      clearInterval(pollRef.current)
+    if (countdownRef.current) clearInterval(countdownRef.current)
+  }, [])
+
+  // ── Countdown tick ───────────────────────────────────────────────────────
+  const startCountdown = useCallback((expiresAt: string) => {
+    if (countdownRef.current) clearInterval(countdownRef.current)
+    setCountdown(secondsUntil(expiresAt))
+
+    countdownRef.current = setInterval(() => {
+      const left = secondsUntil(expiresAt)
+      setCountdown(left)
+      if (left === 0) {
+        clearInterval(countdownRef.current!)
+        if (!isPaidRef.current) setState('expired')
       }
-    }
+    }, 1000)
+  }, [])
 
-    calculateTime()
-    const timer = setInterval(calculateTime, 1000)
-    return () => clearInterval(timer)
-  }, [khqr, status])
+  // ── Polling ──────────────────────────────────────────────────────────────
+  const startPolling = useCallback(
+    (currentOrderId: string) => {
+      if (pollRef.current) clearInterval(pollRef.current)
 
-  // Poll status
-  useEffect(() => {
-    if (status !== 'pending') return
+      pollRef.current = setInterval(async () => {
+        try {
+          const status = await checkoutApi.pollStatus(currentOrderId)
+          setPollError(false)
 
-    const poll = async () => {
-      try {
-        const data = await checkoutApi.pollStatus(orderId)
-        if (data.khqr_status === 'paid') {
-          setStatus('paid')
-          toast.success('Payment received! Redirecting...')
-          setTimeout(() => {
-            router.push(`/orders/${orderId}/success`)
-          }, 2000)
-        } else if (data.khqr_status === 'expired') {
-          setStatus('expired')
-        } else if (data.khqr_status === 'failed') {
-          setStatus('failed')
+          switch (status.khqr_status) {
+            case 'scanned':
+              setState('scanned')
+              break
+
+            case 'paid':
+              if (!isPaidRef.current) {
+                isPaidRef.current = true
+                setState('paid')
+                stopAll()
+                // Brief pause so user sees the success state before redirect
+                setTimeout(() => onPaymentSuccess(currentOrderId), 1800)
+              }
+              break
+
+            case 'expired':
+            case 'failed':
+              setState('expired')
+              stopAll()
+              break
+          }
+        } catch {
+          // Network blip — flag it, keep retrying next tick
+          setPollError(true)
         }
-      } catch (error) {
-        console.error('Polling error:', error)
-      }
-    }
+      }, 3000)
+    },
+    [stopAll, onPaymentSuccess],
+  )
 
-    const interval = setInterval(poll, 3000) // Poll every 3 seconds
-    return () => clearInterval(interval)
-  }, [orderId, status, router])
+  // ── Boot: kick off polling + countdown ──────────────────────────────────
+  useEffect(() => {
+    startPolling(orderId)
+    startCountdown(khqr.expires_at)
+    return stopAll
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
+  // ── Refresh expired QR ───────────────────────────────────────────────────
   const handleRefresh = async () => {
-    setIsRefreshing(true)
+    setRefreshing(true)
     try {
-      const newKhqr = await checkoutApi.refreshQr(orderId)
-      setKhqr(newKhqr)
-      setStatus('pending')
-      toast.success('QR Code refreshed')
-    } catch (error) {
-      toast.error('Failed to refresh QR code')
+      const fresh = await checkoutApi.refreshQr(orderId)
+      isPaidRef.current = false
+      setKhqr(fresh)
+      setState('waiting')
+      setPollError(false)
+      startCountdown(fresh.expires_at)
+      startPolling(orderId)
+    } catch {
+      setState('error')
     } finally {
-      setIsRefreshing(false)
+      setRefreshing(false)
     }
   }
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins}:${secs.toString().padStart(2, '0')}`
+  // ── State config map ─────────────────────────────────────────────────────
+  const stateConfig: Record<
+    PaymentState,
+    { dot: string; label: string; labelColor: string; icon: React.ReactNode }
+  > = {
+    waiting: {
+      dot: 'bg-blue-500 animate-pulse',
+      label: 'Waiting for payment',
+      labelColor: 'text-blue-600',
+      icon: <Smartphone size={14} className="text-blue-500" />,
+    },
+    scanned: {
+      dot: 'bg-amber-400 animate-pulse',
+      label: 'Customer opened Bakong…',
+      labelColor: 'text-amber-600',
+      icon: <Smartphone size={14} className="text-amber-500" />,
+    },
+    paid: {
+      dot: 'bg-emerald-500',
+      label: 'Payment confirmed',
+      labelColor: 'text-emerald-600',
+      icon: <CheckCircle2 size={14} className="text-emerald-500" />,
+    },
+    expired: {
+      dot: 'bg-red-400',
+      label: 'QR code expired',
+      labelColor: 'text-red-500',
+      icon: <AlertTriangle size={14} className="text-red-400" />,
+    },
+    error: {
+      dot: 'bg-red-400',
+      label: 'Something went wrong',
+      labelColor: 'text-red-500',
+      icon: <AlertTriangle size={14} className="text-red-400" />,
+    },
   }
 
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(khqr.qr_string)}&size=300x300`
+  const cfg       = stateConfig[state]
+  const qrDimmed  = state === 'expired' || state === 'error'
+  const qrScanned = state === 'scanned'
 
-  if (status === 'paid') {
-    return (
-      <div className="flex flex-col items-center justify-center p-8 text-center space-y-4">
-        <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center text-green-500">
-          <CheckCircle2 size={48} />
-        </div>
-        <h3 className="text-2xl font-serif text-stone-900">Payment Successful</h3>
-        <p className="text-stone-500">Thank you for your purchase. Your order is being processed.</p>
-      </div>
-    )
-  }
-
+  // ── Render ───────────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col items-center p-6 bg-white rounded-2xl border border-stone-200">
-      <div className="flex items-center gap-2 mb-6">
-        <Image src="/bakong-logo.png" alt="Bakong" width={24} height={24} className="rounded" onError={(e) => (e.currentTarget.style.display = 'none')} />
-        <span className="font-bold text-lg tracking-tight text-[#E31E24]">KHQR</span>
-      </div>
+    <>
+      <style>{`
+        @keyframes khqr-fade-in {
+          from { opacity: 0; transform: translateY(8px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes khqr-success-pop {
+          0%   { transform: scale(0.6); opacity: 0; }
+          60%  { transform: scale(1.1); }
+          100% { transform: scale(1);   opacity: 1; }
+        }
+        @keyframes khqr-frame-glow {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(59,130,246,0); }
+          50%       { box-shadow: 0 0 0 8px rgba(59,130,246,0.12); }
+        }
+        .khqr-enter   { animation: khqr-fade-in 0.4s ease both; }
+        .khqr-success { animation: khqr-success-pop 0.5s cubic-bezier(0.34,1.56,0.64,1) both; }
+        .khqr-glow    { animation: khqr-frame-glow 2.5s ease-in-out infinite; }
+      `}</style>
 
-      <div className="relative group">
-        <div className={`transition-opacity duration-300 ${status !== 'pending' ? 'opacity-20 grayscale' : 'opacity-100'}`}>
-           <div className="p-4 bg-white border-2 border-stone-100 rounded-xl shadow-sm">
-             {/* Using an external QR API since we don't have a local library installed */}
-             <img src={qrUrl} alt="KHQR Code" className="w-64 h-64" />
-           </div>
+      <div className="khqr-enter flex flex-col items-center gap-5 w-full">
+
+        {/* ── QR / State panel ──────────────────────────────────────── */}
+        <div className="relative">
+          {state === 'paid' ? (
+            /* ── Success state replaces QR ── */
+            <div className="khqr-success flex flex-col items-center justify-center w-[220px] h-[220px] rounded-2xl bg-emerald-50 border border-emerald-200">
+              <CheckCircle2 size={64} className="text-emerald-500 mb-2" strokeWidth={1.5} />
+              <p className="text-sm font-semibold text-emerald-700">Payment Confirmed</p>
+              <p className="text-xs text-emerald-500 mt-1">Redirecting…</p>
+            </div>
+          ) : (
+            /* ── QR code frame ── */
+            <div
+              className={[
+                'relative p-3 rounded-2xl border-2 transition-all duration-500',
+                qrDimmed
+                  ? 'border-[#E8E4DF] opacity-40 grayscale pointer-events-none'
+                  : qrScanned
+                  ? 'border-amber-300 khqr-glow'
+                  : 'border-[#E8E4DF] khqr-glow',
+              ].join(' ')}
+            >
+              {/* Corner decorations — viewfinder style */}
+              {(
+                [
+                  'top-0 left-0',
+                  'top-0 right-0 rotate-90',
+                  'bottom-0 right-0 rotate-180',
+                  'bottom-0 left-0 -rotate-90',
+                ] as const
+              ).map((pos) => (
+                <span
+                  key={pos}
+                  className={`absolute ${pos} w-5 h-5 border-l-2 border-t-2 border-[#C9A96E] rounded-tl-sm`}
+                />
+              ))}
+
+              <QRCodeSVG
+                value={khqr.qr_string}
+                size={194}
+                bgColor="#FFFFFF"
+                fgColor="#1A1A1A"
+                level="M"
+              />
+
+              {/* Scanned overlay */}
+              {qrScanned && (
+                <div className="absolute inset-3 flex items-center justify-center rounded-xl bg-amber-50/70 backdrop-blur-[1px]">
+                  <div className="flex flex-col items-center gap-1.5">
+                    <Loader2 size={28} className="text-amber-500 animate-spin" />
+                    <span className="text-[11px] font-medium text-amber-600">Confirming…</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        {status === 'expired' && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/60 backdrop-blur-[2px] rounded-xl">
-            <AlertCircle className="text-amber-500 mb-2" size={40} />
-            <p className="font-medium text-stone-900 mb-4">QR Code Expired</p>
-            <Button onClick={handleRefresh} disabled={isRefreshing} variant="outline" className="rounded-full">
-              {isRefreshing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-              Refresh QR
-            </Button>
+        {/* ── Status badge ──────────────────────────────────────────── */}
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#F5F3F0] border border-[#E8E4DF]">
+          <span className={`w-2 h-2 rounded-full shrink-0 ${cfg.dot}`} />
+          {cfg.icon}
+          <span className={`text-xs font-medium ${cfg.labelColor}`}>{cfg.label}</span>
+          {pollError && (
+            <span className="text-[10px] text-[#9A9490] ml-1">(retrying…)</span>
+          )}
+        </div>
+
+        {/* ── Amount + countdown ────────────────────────────────────── */}
+        {state !== 'paid' && (
+          <div className="flex items-center justify-between w-full max-w-[280px]">
+            <div className="text-center">
+              <p className="text-[11px] uppercase tracking-widest text-[#9A9490]">Amount</p>
+              <p className="text-xl font-bold text-[#1A1A1A] mt-0.5 font-mono">
+                ${khqr.amount.toFixed(2)}
+                <span className="text-xs font-normal text-[#9A9490] ml-1">{khqr.currency}</span>
+              </p>
+            </div>
+
+            <div className="w-px h-8 bg-[#E8E4DF]" />
+
+            <div className="text-center">
+              <p className="text-[11px] uppercase tracking-widest text-[#9A9490] flex items-center gap-1 justify-center">
+                <Clock size={10} />
+                Expires in
+              </p>
+              <p
+                className={[
+                  'text-xl font-bold mt-0.5 font-mono transition-colors duration-300',
+                  state === 'expired'
+                    ? 'text-red-500'
+                    : countdown <= 60
+                    ? 'text-amber-500'
+                    : 'text-[#1A1A1A]',
+                ].join(' ')}
+              >
+                {state === 'expired' ? '00:00' : formatCountdown(countdown)}
+              </p>
+            </div>
           </div>
         )}
-      </div>
 
-      <div className="mt-6 w-full space-y-4">
-        <div className="flex justify-between items-center text-sm">
-          <span className="text-stone-500">Amount to pay</span>
-          <span className="font-semibold text-stone-900">{formatCurrency(khqr.amount)}</span>
-        </div>
-
-        {status === 'pending' && (
-          <div className="flex items-center justify-center gap-2 py-2 px-4 bg-stone-50 rounded-lg text-stone-600 text-sm font-medium">
-            <Clock size={16} />
-            <span>Expires in {formatTime(timeLeft)}</span>
-          </div>
+        {/* ── Step-by-step instructions ─────────────────────────────── */}
+        {(state === 'waiting' || state === 'scanned') && (
+          <ol className="w-full max-w-[280px] space-y-1.5 text-xs text-[#6B6560]">
+            {[
+              'Open your Bakong app',
+              'Tap "Scan" and point at the QR',
+              'Confirm the payment amount',
+            ].map((step, i) => (
+              <li key={i} className="flex items-start gap-2">
+                <span className="shrink-0 mt-0.5 w-4 h-4 rounded-full bg-[#1A1A1A] text-white text-[9px] flex items-center justify-center font-bold">
+                  {i + 1}
+                </span>
+                {step}
+              </li>
+            ))}
+          </ol>
         )}
 
-        <div className="text-center">
-          <div className="flex items-center justify-center gap-2 text-stone-400 text-xs mt-2">
-            <Loader2 className="animate-spin" size={12} />
-            <span>Waiting for payment...</span>
-          </div>
-        </div>
+        {/* ── Refresh button (expired / error) ──────────────────────── */}
+        {(state === 'expired' || state === 'error') && (
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#1A1A1A] text-white text-sm font-medium
+                       hover:bg-[#333] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isRefreshing ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <RefreshCw size={14} />
+            )}
+            {isRefreshing ? 'Generating new QR…' : 'Refresh QR Code'}
+          </button>
+        )}
+
+        {/* ── Bakong branding ───────────────────────────────────────── */}
+        <p className="text-[10px] text-[#B0AAA4] tracking-wide uppercase">
+          Powered by NBC · Bakong KHQR
+        </p>
       </div>
-      
-      <p className="mt-6 text-[10px] text-stone-400 text-center uppercase tracking-widest">
-        Scan with any mobile banking app
-      </p>
-    </div>
+    </>
   )
 }

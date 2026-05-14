@@ -11,11 +11,9 @@ return new class extends Migration
         Schema::create('addresses', function (Blueprint $table) {
             $table->uuid('id')->primary()->default(DB::raw('gen_random_uuid()'));
             $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
+            $table->string('label', 50)->nullable();
             $table->string('street', 255);
-            $table->string('city', 100);
-            $table->string('state', 100);
-            $table->string('postal_code', 20);
-            $table->string('country', 100)->default('Cambodia');
+            $table->string('city', 100)->default('Phnom Penh');
             $table->boolean('is_default')->default(false);
             $table->timestampTz('created_at')->useCurrent();
         });

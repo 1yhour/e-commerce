@@ -25,9 +25,10 @@ export default function CartItemRow({ item, compact = false }: Props) {
         {item.product.image ? (
           <Image
             src={item.product.image}
-            alt={item.product.name}
+            alt={item.product.name || 'Product image'}
             fill
             className="object-cover"
+            
             sizes={`${imgSize}px`}
           />
         ) : (

@@ -5,25 +5,28 @@ namespace App\Services;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Product;
-use Illuminate\Support\Facades\Auth;
 
 class CartService
 {
     /**
      * Resolve the current cart:
-     *  - Authenticated → user-tied cart
-     *  - Guest         → session-tied cart
+     *  - Authenticated (JWT api guard) → user-tied cart
+     *  - Guest                         → session-tied cart
+     *
+     * Note: cart routes have no auth:api middleware, so we must
+     * call auth('api') explicitly to validate the JWT token in-band.
      */
     public function getOrCreateCart(?string $sessionId = null): Cart
     {
-        if (Auth::check()) {
+        // auth('api')->check() validates the JWT Bearer token even without middleware
+        if (auth('api')->check()) {
             return Cart::firstOrCreate(
-                ['user_id' => Auth::id()],
+                ['user_id' => auth('api')->id()],
                 ['updated_at' => now()]
             );
         }
 
-        // Guest cart
+        // Guest cart — requires X-Session-Id header
         abort_if(! $sessionId, 400, 'Session ID required for guest cart.');
 
         return Cart::firstOrCreate(
@@ -34,12 +37,16 @@ class CartService
 
     public function getCart(?string $sessionId = null): ?Cart
     {
-        if (Auth::check()) {
-            return Cart::where('user_id', Auth::id())->with('itemsWithProduct')->first();
+        if (auth('api')->check()) {
+            return Cart::where('user_id', auth('api')->id())
+                ->with('itemsWithProduct')
+                ->first();
         }
 
         if ($sessionId) {
-            return Cart::where('session_id', $sessionId)->with('itemsWithProduct')->first();
+            return Cart::where('session_id', $sessionId)
+                ->with('itemsWithProduct')
+                ->first();
         }
 
         return null;

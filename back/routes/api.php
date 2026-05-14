@@ -92,6 +92,12 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/orders',     [CheckoutController::class, 'index']);     // GET  /api/orders
     Route::get('/orders/{order}', [CheckoutController::class, 'show']); // GET  /api/orders/{id}
  
+    // Addresses
+    Route::get('/addresses',        [\App\Http\Controllers\Api\AddressController::class, 'index']);
+    Route::post('/addresses',       [\App\Http\Controllers\Api\AddressController::class, 'store']);
+    Route::put('/addresses/{address}', [\App\Http\Controllers\Api\AddressController::class, 'update']);
+    Route::delete('/addresses/{address}', [\App\Http\Controllers\Api\AddressController::class, 'destroy']);
+
     // KHQR polling + refresh
     Route::get('/orders/{order}/payment/status',  [KhqrController::class, 'pollStatus']); // GET
     Route::post('/orders/{order}/khqr/refresh',   [KhqrController::class, 'refresh']);    // POST

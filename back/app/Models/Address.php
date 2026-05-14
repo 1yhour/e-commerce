@@ -15,14 +15,37 @@ class Address extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'user_id', 'street', 'city', 'state',
-        'postal_code', 'country', 'is_default',
+        'user_id', 'label', 'street', 'city', 'is_default',
     ];
 
     protected $casts = [
         'is_default' => 'boolean',
         'created_at' => 'datetime',
     ];
+
+    /**
+     * Scope to filter by user.
+     */
+    public function scopeForUser($query, $userId)
+    {
+        return $query->where('user_id', $userId);
+    }
+
+    /**
+     * Scope to order by default first.
+     */
+    public function scopeDefaultFirst($query)
+    {
+        return $query->orderByDesc('is_default')->orderByDesc('created_at');
+    }
+
+    /**
+     * Computed full address string.
+     */
+    public function getFullAddressAttribute(): string
+    {
+        return "{$this->street}, {$this->city}";
+    }
 
     /*
     |--------------------------------------------------------------------------

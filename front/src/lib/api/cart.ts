@@ -6,7 +6,7 @@ export interface CartProduct {
   id: string
   name: string
   price: number
-  image: string | null
+  image: string
 }
 
 export interface CartItem {
@@ -106,4 +106,12 @@ export const checkoutApi = {
 
   getAddresses: () =>
     api.get<{ data: Address[] }>('/addresses').then((r) => r.data.data),
+
+  createAddress: (payload: {
+    label: string
+    street: string
+    city: string
+    is_default?: boolean
+  }) =>
+    api.post<{ data: Address }>('/addresses', payload).then((r) => r.data.data),
 }

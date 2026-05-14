@@ -2,13 +2,18 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Cart extends Model
 {
-    public $timestamps = false;
+    use HasUuids;
+
+    public $timestamps   = false;
+    public $incrementing = false;
+    protected $keyType   = 'string';
 
     protected $fillable = ['user_id', 'session_id', 'updated_at'];
 
@@ -53,7 +58,10 @@ class Cart extends Model
         $guestCart = static::where('session_id', $sessionId)->with('items')->first();
         if (! $guestCart) return;
 
-        $userCart = static::firstOrCreate(['user_id' => $userId]);
+        $userCart = static::firstOrCreate(
+            ['user_id' => $userId],
+            ['updated_at' => now()]   // ← was missing updated_at on create
+        );
 
         foreach ($guestCart->items as $guestItem) {
             $existing = CartItem::where('cart_id', $userCart->id)

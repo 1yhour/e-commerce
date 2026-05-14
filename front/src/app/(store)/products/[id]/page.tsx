@@ -227,15 +227,7 @@ export default function ProductDetailPage({ params: paramsPromise}: { params: Pr
             </div>
 
             {/* Action Buttons */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-12">
-              <Button
-                onClick={() => onAddToCart(true)}
-                disabled={isBuyingNow || isAdding || product.stock_quantity === 0}
-                variant="outline"
-                className="w-full h-14 rounded-none border-stone-900 text-stone-900 text-[10px] tracking-[0.2em] uppercase hover:bg-stone-900 hover:text-white transition-all duration-300"
-              >
-                {isBuyingNow ? <Loader2 className="w-4 h-4 animate-spin" /> : "Buy Now"}
-              </Button>
+            <div className="grid grid-cols-1 gap-4 mb-12">
               <Button
                 onClick={() => onAddToCart(false)}
                 disabled={isAdding || isBuyingNow || product.stock_quantity === 0}
