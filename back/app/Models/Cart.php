@@ -4,29 +4,29 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Cart extends Model
 {
     use HasUuids;
 
-    public $timestamps   = false;
+    /**
+     * Disable standard timestamps because the migration only has updated_at.
+     * We handle updated_at manually or via $cart->touch().
+     */
+    public $timestamps = false;
+    
     public $incrementing = false;
-    protected $keyType   = 'string';
+    protected $keyType = 'string';
 
-    protected $fillable = ['user_id', 'session_id', 'updated_at'];
-
-    protected $casts = [
-        'updated_at' => 'datetime',
+    protected $fillable = [
+        'user_id',
+        'session_id',
+        'updated_at'
     ];
 
     // ── Relationships ────────────────────────────────────────────────────────
-
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(User::class);
-    }
 
     public function items(): HasMany
     {
@@ -38,48 +38,8 @@ class Cart extends Model
         return $this->hasMany(CartItem::class)->with('product.images');
     }
 
-    // ── Helpers ──────────────────────────────────────────────────────────────
-
-    public function getSubtotalAttribute(): float
+    public function user(): BelongsTo
     {
-        return $this->items->sum(fn ($item) => $item->product->price * $item->quantity);
-    }
-
-    public function getTotalItemsAttribute(): int
-    {
-        return $this->items->sum('quantity');
-    }
-
-    /**
-     * Merge a guest cart into the authenticated user's cart after login.
-     */
-    public static function mergeGuestCart(string $sessionId, string $userId): void
-    {
-        $guestCart = static::where('session_id', $sessionId)->with('items')->first();
-        if (! $guestCart) return;
-
-        $userCart = static::firstOrCreate(
-            ['user_id' => $userId],
-            ['updated_at' => now()]   // ← was missing updated_at on create
-        );
-
-        foreach ($guestCart->items as $guestItem) {
-            $existing = CartItem::where('cart_id', $userCart->id)
-                ->where('product_id', $guestItem->product_id)
-                ->first();
-
-            if ($existing) {
-                $existing->increment('quantity', $guestItem->quantity);
-            } else {
-                CartItem::create([
-                    'cart_id'    => $userCart->id,
-                    'product_id' => $guestItem->product_id,
-                    'quantity'   => $guestItem->quantity,
-                ]);
-            }
-        }
-
-        $guestCart->delete();
-        $userCart->touch('updated_at');
+        return $this->belongsTo(User::class);
     }
 }
