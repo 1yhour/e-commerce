@@ -7,8 +7,9 @@ import Link from 'next/link'
 import { useCartStore } from '@/stores/cartStore'
 import { checkoutApi, type Address, type CheckoutResponse } from '@/lib/api/cart'
 import { Button } from '@/components/ui/button'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, cn } from '@/lib/utils'
 import KhqrPayment from '@/components/checkout/KhqrPayment'
+import AddressModal from '@/components/checkout/AddressModal'
 import { toast } from 'sonner'
 import { Skeleton } from '@/components/ui/skeleton'
 
@@ -20,6 +21,7 @@ export default function CheckoutPage() {
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null)
   const [isAddressesLoading, setIsAddressesLoading] = useState(true)
   const [isPlacingOrder, setIsPlacingOrder] = useState(false)
+  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false)
   const [checkoutData, setCheckoutData] = useState<CheckoutResponse | null>(null)
 
   useEffect(() => {
@@ -140,6 +142,14 @@ export default function CheckoutPage() {
                   <MapPin size={20} />
                 </div>
                 <h2 className="text-xl font-medium text-stone-900">Shipping Address</h2>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="ml-auto text-stone-500 hover:text-stone-900 text-[10px] uppercase tracking-widest"
+                  onClick={() => setIsAddressModalOpen(true)}
+                >
+                  Change / Add
+                </Button>
               </div>
 
               {isAddressesLoading ? (
@@ -176,7 +186,12 @@ export default function CheckoutPage() {
               ) : (
                 <div className="text-center py-8 border-2 border-dashed border-stone-200 rounded-xl">
                   <p className="text-stone-500 mb-4">No addresses found</p>
-                  <Button variant="outline" size="sm" className="rounded-full">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="rounded-full"
+                    onClick={() => setIsAddressModalOpen(true)}
+                  >
                     Add New Address
                   </Button>
                 </div>
@@ -224,7 +239,15 @@ export default function CheckoutPage() {
                   <div key={item.id} className="flex gap-3">
                     <div className="relative w-12 h-12 rounded bg-stone-50 overflow-hidden shrink-0">
                       {item.product.image && (
-                        <img src={item.product.image} alt={item.product.name} className="object-cover w-full h-full" />
+                        <img 
+                          src={
+                            item.product.image.startsWith('http')
+                              ? item.product.image
+                              : `${process.env.NEXT_PUBLIC_STORAGE_URL}/${item.product.image}`
+                          } 
+                          alt={item.product.name} 
+                          className="object-cover w-full h-full" 
+                        />
                       )}
                       <span className="absolute -top-1 -right-1 bg-stone-900 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
                         {item.quantity}
@@ -277,6 +300,13 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
+
+      {isAddressModalOpen && (
+        <AddressModal 
+          onClose={() => setIsAddressModalOpen(false)} 
+          onSuccess={() => loadAddresses()} 
+        />
+      )}
     </div>
   )
 }

@@ -24,8 +24,12 @@ export default function CartItemRow({ item, compact = false }: Props) {
       >
         {item.product.image ? (
           <Image
-            src={item.product.image}
-            alt={item.product.name}
+            src={
+              item.product.image.startsWith('http')
+                ? item.product.image
+                : `${process.env.NEXT_PUBLIC_STORAGE_URL}/${item.product.image}`
+            }
+            alt={item.product.name ?? 'Product Image'}
             fill
             className="object-cover"
             sizes={`${imgSize}px`}
