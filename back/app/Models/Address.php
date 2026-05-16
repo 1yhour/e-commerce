@@ -15,8 +15,7 @@ class Address extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'user_id', 'street', 'city', 'state',
-        'postal_code', 'country', 'is_default',
+        'user_id', 'street', 'city', 'country', 'is_default',
     ];
 
     protected $casts = [

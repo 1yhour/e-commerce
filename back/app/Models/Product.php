@@ -28,6 +28,13 @@ class Product extends Model
         'deleted_at'     => 'datetime',
     ];
 
+    protected $appends = ['image', 'name'];
+
+    public function getNameAttribute()
+    {
+        return $this->title;
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Relationships

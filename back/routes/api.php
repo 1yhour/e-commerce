@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CheckoutController;
 use App\Http\Controllers\Api\KhqrController;
+use App\Http\Controllers\Api\AddressController;
 
 /*
 |--------------------------------------------------------------------------
@@ -95,6 +96,10 @@ Route::middleware('auth:api')->group(function () {
     // KHQR polling + refresh
     Route::get('/orders/{order}/payment/status',  [KhqrController::class, 'pollStatus']); // GET
     Route::post('/orders/{order}/khqr/refresh',   [KhqrController::class, 'refresh']);    // POST
+
+    // Addresses
+    Route::get('/addresses', [AddressController::class, 'index']); // GET /api/addresses
+    Route::post('/addresses', [AddressController::class, 'store']); // POST /api/addresses
 });
  
 // ── Dev-only: manually trigger payment confirmation ───────────────────────────

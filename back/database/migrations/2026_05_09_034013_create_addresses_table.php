@@ -13,8 +13,6 @@ return new class extends Migration
             $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
             $table->string('street', 255);
             $table->string('city', 100);
-            $table->string('state', 100);
-            $table->string('postal_code', 20);
             $table->string('country', 100)->default('Cambodia');
             $table->boolean('is_default')->default(false);
             $table->timestampTz('created_at')->useCurrent();

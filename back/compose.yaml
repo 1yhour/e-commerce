@@ -1,11 +1,11 @@
 services:
     laravel.test:
         build:
-            context: './vendor/laravel/sail/runtimes/8.5'
+            context: ./vendor/laravel/sail/runtimes/8.5
             dockerfile: Dockerfile
             args:
                 WWWGROUP: '${WWWGROUP}'
-        image: 'sail-8.5/app'
+        image: sail-8.5/app
         extra_hosts:
             - 'host.docker.internal:host-gateway'
         ports:
@@ -48,15 +48,14 @@ services:
                 - '${DB_USERNAME}'
             retries: 3
             timeout: 5s
-
     frontend:
-        image: node:20
+        image: 'node:20'
         ports:
-            - "3000:3000"
+            - '3000:3000'
         volumes:
             - '../front:/var/www/front'
         working_dir: /var/www/front
-        command: npm run dev
+        command: 'npm run dev'
         networks:
             - sail
 networks:

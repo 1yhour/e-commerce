@@ -57,7 +57,17 @@ class DatabaseSeeder extends Seeder
             'role_id' => $customerRole->id,
         ]);
 
-
-        
+        // 5. Create a test address for the customer
+        $customer = User::where('email', 'customer@example.com')->first();
+        if ($customer) {
+            Address::firstOrCreate(
+                ['user_id' => $customer->id, 'street' => '123 Luxury St'],
+                [
+                    'city'        => 'Phnom Penh',
+                    'country'     => 'Cambodia',
+                    'is_default'  => true,
+                ]
+            );
+        }
     }
 }
