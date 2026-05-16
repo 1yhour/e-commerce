@@ -1,0 +1,42 @@
+# --- Common ---
+node_modules/
+.DS_Store
+.env
+.env.local
+.env.*.local
+dist/
+build/
+.idea/
+.vscode/
+
+# --- Backend (Laravel) ---
+back/.env
+back/vendor/
+back/storage/*.key
+back/storage/framework/cache/data/*
+back/storage/framework/sessions/*
+back/storage/framework/testing/*
+back/storage/framework/views/*
+back/storage/logs/*
+back/public/storage
+back/public/hot
+back/.phpunit.result.cache
+back/bootstrap/cache/*
+
+# --- Frontend (Next.js) ---
+front/node_modules/
+front/.next/
+front/out/
+front/.env.local
+front/.env.development.local
+front/.env.test.local
+front/.env.production.local
+front/npm-debug.log*
+front/yarn-debug.log*
+front/yarn-error.log*
+front/.pnpm-debug.log*
+front/.vercel
+
+# --- Docker ---
+.docker/
+back/docker-compose.override.yml

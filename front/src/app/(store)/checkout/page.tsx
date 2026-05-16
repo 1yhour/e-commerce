@@ -66,6 +66,12 @@ export default function CheckoutPage() {
     }
   }
 
+  useEffect(() => {
+    if (!isCartLoading && cart.items.length === 0 && !checkoutData) {
+      router.replace('/cart')
+    }
+  }, [isCartLoading, cart.items.length, checkoutData, router])
+
   // If order is placed, show QR Payment
   if (checkoutData) {
     return (
@@ -90,12 +96,6 @@ export default function CheckoutPage() {
       </div>
     )
   }
-
-  useEffect(() => {
-    if (!isCartLoading && cart.items.length === 0 && !checkoutData) {
-      router.replace('/cart')
-    }
-  }, [isCartLoading, cart.items.length, checkoutData, router])
 
   if (isCartLoading && cart.items.length === 0) {
     return (
